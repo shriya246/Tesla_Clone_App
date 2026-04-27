@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --background: #06070a;
+  --foreground: #f5f5f5;
+  --muted: #d4d4d8;
+}
+
+@layer base {
+  * {
+    @apply border-white/10;
+  }
+
+  html {
+    @apply scroll-smooth bg-slate-950;
+  }
+
+  body {
+    @apply min-h-screen bg-slate-950 text-white antialiased;
+    font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  ::selection {
+    @apply bg-white/20 text-white;
+  }
+}
+
+@layer utilities {
+  .section-shell {
+    @apply px-5 sm:px-8 lg:px-12;
+  }
+}
+
