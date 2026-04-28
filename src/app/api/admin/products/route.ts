@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { ZodError } from "zod";
 
 import {
@@ -9,6 +10,7 @@ import {
 } from "@/lib/admin-products";
 import { requireAdminApiSession } from "@/lib/auth/require-admin-api";
 import { createAdminProduct } from "@/lib/db/admin-products";
+import { isTrustedMutationOrigin } from "@/lib/security/request";
 import { parseAdminProductPayload } from "@/lib/validations/admin-product";
 import type { AdminProductMutationResponse } from "@/types";
 
@@ -38,6 +40,15 @@ export async function POST(request: Request) {
 
   if ("errorResponse" in adminAccess) {
     return adminAccess.errorResponse;
+  }
+
+  if (!isTrustedMutationOrigin(request)) {
+    const response: AdminProductMutationResponse = {
+      success: false,
+      message: "This request origin is not allowed.",
+    };
+
+    return NextResponse.json(response, { status: 403 });
   }
 
   let body: unknown;
@@ -89,6 +100,7 @@ export async function POST(request: Request) {
       return NextResponse.json(response, { status: 409 });
     }
 
+    Sentry.captureException(error);
     console.error("Failed to create admin product.", error);
 
     const response: AdminProductMutationResponse = {

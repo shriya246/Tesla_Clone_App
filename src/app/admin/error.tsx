@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 
 interface AdminErrorPageProps {
   error: Error;
@@ -8,6 +10,10 @@ interface AdminErrorPageProps {
 }
 
 export default function AdminErrorPage({ error, reset }: AdminErrorPageProps) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <section className="section-shell py-12 lg:py-16">
       <div className="mx-auto max-w-4xl rounded-[2rem] border border-rose-400/24 bg-rose-400/10 p-6 shadow-halo sm:p-8">

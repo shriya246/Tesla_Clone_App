@@ -1,11 +1,20 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { AdminTabs } from "@/components/AdminTabs";
 import { requireAdminSession } from "@/lib/auth/require-admin";
+import { buildPageMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = buildPageMetadata({
+  title: "Admin | Tesla Inspired",
+  description:
+    "Admin operations for products, media, and inquiry management.",
+  path: "/admin",
+  noIndex: true,
+});
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -26,12 +35,12 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
                   Admin
                 </p>
                 <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                  Full-stack operations, kept intentionally lightweight.
+                  Catalog and inquiry operations, finally practical day to day.
                 </h1>
                 <p className="mt-5 text-sm leading-7 text-white/68 sm:text-base">
-                  Review catalog inventory, inspect incoming inquiries, and keep
-                  the Tesla-inspired MVP running with a clean operational
-                  surface.
+                  Create, edit, and remove products, review saved inquiries, and
+                  keep the Tesla-inspired MVP manageable without turning admin into
+                  an overbuilt CMS.
                 </p>
               </div>
 

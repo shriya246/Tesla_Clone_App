@@ -1,8 +1,13 @@
 import Link from "next/link";
 
 import {
+  adminProductCategoryConfigs,
+  getAdminProductCreateHref,
+} from "@/lib/admin-products";
+import {
   adminInquiryTypeLabels,
   adminItemTypeLabels,
+  getAllAdminProducts,
   getAdminDashboardSummary,
   getAllInquiries,
 } from "@/lib/db/admin";
@@ -34,12 +39,20 @@ const statCards = [
 ] as const;
 
 export default async function AdminOverviewPage() {
-  const [summary, inquiries] = await Promise.all([
+  const [summary, inquiries, products] = await Promise.all([
     getAdminDashboardSummary(),
     getAllInquiries(),
+    getAllAdminProducts(),
   ]);
 
   const recentInquiries = inquiries.slice(0, 4);
+  const recentlyUpdatedProducts = [
+    ...products.vehicles,
+    ...products.energyProducts,
+    ...products.shopProducts,
+  ]
+    .sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime())
+    .slice(0, 4);
 
   return (
     <>
@@ -165,14 +178,14 @@ export default async function AdminOverviewPage() {
 
             <article className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
               <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
-                Next Steps
+                Quick Actions
               </p>
               <h2 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-                Keep V0.3 operationally clean.
+                Run everyday catalog and inquiry work from one place.
               </h2>
               <p className="mt-4 text-sm leading-7 text-white/68">
-                Use Products for read-focused catalog QA and Inquiries for
-                monitoring inbound demo, consultation, and shop questions.
+                Create or revise products, then review inbound requests with a
+                cleaner admin workflow that stays lightweight and maintainable.
               </p>
               <div className="mt-6 flex flex-col gap-3">
                 <Link
@@ -187,8 +200,151 @@ export default async function AdminOverviewPage() {
                 >
                   Review Inquiries
                 </Link>
+                {Object.values(adminProductCategoryConfigs).map((config) => (
+                  <Link
+                    key={config.category}
+                    href={getAdminProductCreateHref(config.category)}
+                    className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-black/24 text-sm font-medium text-white/72 transition hover:border-white/18 hover:text-white"
+                  >
+                    New {config.categoryLabel}
+                  </Link>
+                ))}
               </div>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="section-shell border-t border-white/8 py-12 lg:py-16">
+        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
+                  Recently Updated Products
+                </p>
+                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  Catalog entries that changed most recently.
+                </h2>
+              </div>
+              <Link
+                href="/admin/products"
+                className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white/10 px-5 text-sm font-medium text-white/84 transition hover:bg-white/18 hover:text-white"
+              >
+                Open products
+              </Link>
+            </div>
+
+            {recentlyUpdatedProducts.length === 0 ? (
+              <div className="mt-8 rounded-[1.75rem] border border-dashed border-white/12 bg-black/24 p-6 text-center">
+                <p className="text-lg font-medium text-white">
+                  No product records are available yet.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-8 space-y-4">
+                {recentlyUpdatedProducts.map((product) => (
+                  <article
+                    key={`${product.category}-${product.id}`}
+                    className="rounded-[1.75rem] border border-white/8 bg-black/24 p-5"
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
+                          {product.categoryLabel}
+                        </p>
+                        <h3 className="mt-3 text-xl font-semibold tracking-tight text-white">
+                          {product.title}
+                        </h3>
+                        <p className="mt-2 break-all text-sm text-white/56">
+                          {product.slug}
+                        </p>
+                      </div>
+                      <p className="text-xs uppercase tracking-[0.24em] text-white/38">
+                        {formatDateTime(product.updatedAt)}
+                      </p>
+                    </div>
+                    <p className="mt-4 text-sm leading-6 text-white/72">
+                      {product.summary}
+                    </p>
+                    <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                      <Link
+                        href={product.adminHref}
+                        className="inline-flex min-h-[2.75rem] items-center justify-center rounded-full border border-white/10 bg-white text-sm font-medium text-slate-950 transition hover:bg-white/90"
+                      >
+                        Edit product
+                      </Link>
+                      <Link
+                        href={product.href}
+                        className="inline-flex min-h-[2.75rem] items-center justify-center rounded-full border border-white/10 bg-black/24 text-sm font-medium text-white/72 transition hover:border-white/18 hover:text-white"
+                      >
+                        View public page
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
+                  Inquiry Follow-Up
+                </p>
+                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  Continue from the saved request.
+                </h2>
+              </div>
+              <Link
+                href="/admin/inquiries"
+                className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white/10 px-5 text-sm font-medium text-white/84 transition hover:bg-white/18 hover:text-white"
+              >
+                Open inquiries
+              </Link>
+            </div>
+
+            {recentInquiries.length === 0 ? (
+              <div className="mt-8 rounded-[1.75rem] border border-dashed border-white/12 bg-black/24 p-6 text-center">
+                <p className="text-lg font-medium text-white">No inquiries yet.</p>
+              </div>
+            ) : (
+              <div className="mt-8 space-y-4">
+                {recentInquiries.map((inquiry) => (
+                  <article
+                    key={inquiry.id}
+                    className="rounded-[1.75rem] border border-white/8 bg-black/24 p-5"
+                  >
+                    <p className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
+                      {adminInquiryTypeLabels[inquiry.type]}
+                    </p>
+                    <h3 className="mt-3 text-xl font-semibold tracking-tight text-white">
+                      {inquiry.name}
+                    </h3>
+                    <p className="mt-2 text-sm text-white/62">{inquiry.email}</p>
+                    <p className="mt-4 text-sm leading-6 text-white/72">
+                      {inquiry.messagePreview}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-3 text-xs uppercase tracking-[0.22em] text-white/46">
+                      {inquiry.itemType ? (
+                        <span>{adminItemTypeLabels[inquiry.itemType]}</span>
+                      ) : null}
+                      {inquiry.productSlug ? <span>{inquiry.productSlug}</span> : null}
+                      <span>{formatDateTime(inquiry.createdAt)}</span>
+                    </div>
+                    <div className="mt-5 flex flex-col gap-3">
+                      <Link
+                        href={inquiry.adminHref}
+                        className="inline-flex min-h-[2.75rem] items-center justify-center rounded-full border border-white/10 bg-white text-sm font-medium text-slate-950 transition hover:bg-white/90"
+                      >
+                        Open inquiry detail
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>

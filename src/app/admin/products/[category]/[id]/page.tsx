@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { AdminProductForm } from "@/components/admin/AdminProductForm";
+import { DeleteProductButton } from "@/components/admin/DeleteProductButton";
 import {
   getAdminProductCategoryConfig,
   isAdminProductCategory,
@@ -54,6 +55,15 @@ export default async function EditAdminProductPage({
         <AdminProductForm
           mode="edit"
           category={category}
+          extraActions={
+            <DeleteProductButton
+              category={category}
+              compact
+              id={id}
+              redirectTo="/admin/products"
+              title={initialValues.title}
+            />
+          }
           initialValues={initialValues}
           isCloudinaryConfigured={hasCloudinaryEnv}
           productId={id}

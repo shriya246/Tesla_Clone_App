@@ -15,6 +15,7 @@ import {
 } from "@/lib/db/energy";
 import { isFavorited } from "@/lib/db/favorites";
 import { formatSlug } from "@/lib/formatSlug";
+import { buildPageMetadata } from "@/lib/metadata";
 
 interface EnergyDetailPageProps {
   params: Promise<{
@@ -31,15 +32,20 @@ export async function generateMetadata({
   const product = await getEnergyProductBySlug(slug);
 
   if (!product) {
-    return {
+    return buildPageMetadata({
       title: `${formatSlug(slug)} | Energy | Tesla Inspired`,
-    };
+      description:
+        "Explore Tesla-inspired home energy products and consultation options.",
+      path: `/energy/${slug}`,
+    });
   }
 
-  return {
+  return buildPageMetadata({
     title: `${product.title} | Energy | Tesla Inspired`,
     description: product.description,
-  };
+    path: `/energy/${product.slug}`,
+    image: product.image,
+  });
 }
 
 export default async function EnergyDetailPage({

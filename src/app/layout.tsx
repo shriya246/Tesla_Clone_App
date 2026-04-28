@@ -1,11 +1,36 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { AuthSessionProvider } from "@/components/AuthSessionProvider";
+import {
+  buildPageMetadata,
+  getMetadataBase,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+} from "@/lib/metadata";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tesla Inspired Landing",
-  description: "A premium Tesla-inspired landing page built with Next.js and Tailwind CSS.",
+  metadataBase: getMetadataBase(),
+  applicationName: SITE_NAME,
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "technology",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  ...buildPageMetadata({
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    path: "/",
+    keywords: [
+      "Tesla inspired",
+      "electric vehicles",
+      "energy products",
+      "charging",
+      "admin dashboard",
+    ],
+  }),
 };
 
 interface RootLayoutProps {
@@ -17,6 +42,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="en">
       <body>
         <AuthSessionProvider>{children}</AuthSessionProvider>
+        <Analytics />
       </body>
     </html>
   );

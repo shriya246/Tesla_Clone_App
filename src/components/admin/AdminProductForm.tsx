@@ -3,8 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { AppButton } from "@/components/AppButton";
 import { buildMediaBackgroundStyle, isRemoteMediaUrl } from "@/lib/media";
@@ -25,6 +26,7 @@ interface AdminProductFormProps {
   isCloudinaryConfigured: boolean;
   productId?: string;
   publicHref?: string;
+  extraActions?: ReactNode;
 }
 
 const fieldClasses =
@@ -77,6 +79,7 @@ export function AdminProductForm({
   isCloudinaryConfigured,
   productId,
   publicHref,
+  extraActions,
 }: AdminProductFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -93,7 +96,7 @@ export function AdminProductForm({
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     setError,
     clearErrors,
@@ -103,8 +106,14 @@ export function AdminProductForm({
     defaultValues: initialValues,
   });
 
-  const itemType = watch("itemType");
-  const imageValue = watch("image");
+  const itemType = useWatch({
+    control,
+    name: "itemType",
+  });
+  const imageValue = useWatch({
+    control,
+    name: "image",
+  });
   const imageSourceLabel = !imageValue
     ? "Image pending"
     : isRemoteMediaUrl(imageValue)
@@ -265,6 +274,7 @@ export function AdminProductForm({
                 View public page
               </Link>
             ) : null}
+            {extraActions}
           </div>
         </div>
 
@@ -510,7 +520,7 @@ export function AdminProductForm({
                         <p className="text-sm text-rose-300">{errors.specsInput.message}</p>
                       ) : (
                         <p className={helpTextClasses}>
-                          Expected shape: <code>[&#123;"label":"Range","value":"405 mi"&#125;]</code>
+                          Expected shape: <code>[&#123;&quot;label&quot;:&quot;Range&quot;,&quot;value&quot;:&quot;405 mi&quot;&#125;]</code>
                         </p>
                       )}
                     </div>
@@ -532,7 +542,7 @@ export function AdminProductForm({
                         </p>
                       ) : (
                         <p className={helpTextClasses}>
-                          Expected shape: <code>[&#123;"title":"...","description":"..."&#125;]</code>
+                          Expected shape: <code>[&#123;&quot;title&quot;:&quot;...&quot;,&quot;description&quot;:&quot;...&quot;&#125;]</code>
                         </p>
                       )}
                     </div>

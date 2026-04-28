@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -5,9 +6,17 @@ import { auth, signOut } from "@/auth";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { getUserFavoriteItems } from "@/lib/db/favorites";
+import { buildPageMetadata } from "@/lib/metadata";
 import { buildMediaBackgroundStyle } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = buildPageMetadata({
+  title: "Account | Tesla Inspired",
+  description:
+    "Review saved favorites, revisit product decisions, and access lightweight account tools.",
+  path: "/account",
+  noIndex: true,
+});
 
 interface AccountPageProps {
   searchParams: Promise<{

@@ -9,4 +9,7 @@ dist
 .env.test.local
 .env.production.local
 *.log
+coverage
+playwright-report
+test-results
 

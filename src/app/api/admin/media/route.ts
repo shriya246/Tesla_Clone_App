@@ -1,7 +1,9 @@
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 
 import { hasCloudinaryEnv } from "@/lib/env";
 import { requireAdminApiSession } from "@/lib/auth/require-admin-api";
+import { isTrustedMutationOrigin } from "@/lib/security/request";
 import { uploadProductImage, UploadValidationError } from "@/lib/uploads";
 import type { AdminMediaUploadResponse } from "@/types";
 
@@ -13,6 +15,15 @@ export async function POST(request: Request) {
 
   if ("errorResponse" in adminAccess) {
     return adminAccess.errorResponse;
+  }
+
+  if (!isTrustedMutationOrigin(request)) {
+    const response: AdminMediaUploadResponse = {
+      success: false,
+      message: "This request origin is not allowed.",
+    };
+
+    return NextResponse.json(response, { status: 403 });
   }
 
   if (!hasCloudinaryEnv) {
@@ -75,6 +86,7 @@ export async function POST(request: Request) {
       return NextResponse.json(response, { status: 400 });
     }
 
+    Sentry.captureException(error);
     console.error("Cloudinary upload failed.", error);
 
     const response: AdminMediaUploadResponse = {

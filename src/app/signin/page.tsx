@@ -1,9 +1,19 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { auth, signIn } from "@/auth";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
+import { buildPageMetadata } from "@/lib/metadata";
 import { hasGoogleAuthEnv } from "@/lib/env";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Sign In | Tesla Inspired",
+  description:
+    "Sign in to save favorites, revisit products, and access your lightweight Tesla-inspired account area.",
+  path: "/signin",
+  noIndex: true,
+});
 
 interface SignInPageProps {
   searchParams: Promise<{

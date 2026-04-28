@@ -48,6 +48,7 @@ export const inquiryFormFieldsSchema = z.object({
     .trim()
     .min(12, "Please share a bit more detail so we can help.")
     .max(1200, "Message is too long."),
+  website: z.string().trim().max(0).optional(),
 });
 
 export const inquiryPayloadSchema = inquiryFormFieldsSchema.extend({

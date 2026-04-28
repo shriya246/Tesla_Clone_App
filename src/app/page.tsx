@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ChargingSection } from "@/components/ChargingSection";
 import { EnergyCard } from "@/components/EnergyCard";
 import { FeatureCard } from "@/components/FeatureCard";
@@ -15,6 +16,21 @@ import {
   offerSections,
   productSections,
 } from "@/data/homeSections";
+import { buildPageMetadata, SITE_TITLE } from "@/lib/metadata";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: SITE_TITLE,
+  description:
+    "Browse a Tesla-inspired digital storefront spanning vehicles, charging, home energy, accessories, and guided inquiry flows.",
+  path: "/",
+  keywords: [
+    "Tesla inspired app",
+    "EV storefront",
+    "vehicle lineup",
+    "home energy",
+    "charging network",
+  ],
+});
 
 export default function HomePage() {
   return (

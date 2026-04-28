@@ -14,6 +14,7 @@ import { RelatedItems } from "@/components/RelatedItems";
 import { isFavorited } from "@/lib/db/favorites";
 import { getAllVehicles, getVehicleBySlug } from "@/lib/db/vehicles";
 import { formatSlug } from "@/lib/formatSlug";
+import { buildPageMetadata } from "@/lib/metadata";
 
 interface VehicleDetailPageProps {
   params: Promise<{
@@ -30,15 +31,20 @@ export async function generateMetadata({
   const vehicle = await getVehicleBySlug(slug);
 
   if (!vehicle) {
-    return {
+    return buildPageMetadata({
       title: `${formatSlug(slug)} | Vehicles | Tesla Inspired`,
-    };
+      description:
+        "Explore vehicle details across the Tesla-inspired lineup.",
+      path: `/vehicles/${slug}`,
+    });
   }
 
-  return {
+  return buildPageMetadata({
     title: `${vehicle.title} | Vehicles | Tesla Inspired`,
     description: vehicle.subtitle,
-  };
+    path: `/vehicles/${vehicle.slug}`,
+    image: vehicle.image,
+  });
 }
 
 export default async function VehicleDetailPage({

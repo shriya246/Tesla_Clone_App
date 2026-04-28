@@ -11,6 +11,7 @@ import { isRemoteMediaUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
 import type {
   AdminDashboardSummary,
+  AdminInquiryDetailItem,
   AdminInquiryListItem,
   AdminProductCollection,
   AdminProductListItem,
@@ -191,12 +192,68 @@ export async function getAllInquiries(): Promise<AdminInquiryListItem[]> {
         inquiry.productSlug && inquiry.itemType
           ? getProductHref(inquiry.itemType, inquiry.productSlug)
           : undefined,
+      adminHref: `/admin/inquiries/${inquiry.id}`,
       createdAt: inquiry.createdAt,
       userName: inquiry.user?.name,
       userEmail: inquiry.user?.email,
     }));
   } catch {
     return [];
+  }
+}
+
+export async function getInquiryById(
+  id: string,
+): Promise<AdminInquiryDetailItem | null> {
+  try {
+    const inquiry = await prisma.inquiry.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        type: true,
+        name: true,
+        email: true,
+        phone: true,
+        message: true,
+        productSlug: true,
+        itemType: true,
+        createdAt: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!inquiry) {
+      return null;
+    }
+
+    return {
+      id: inquiry.id,
+      type: inquiry.type as InquiryType,
+      itemType: inquiry.itemType ?? undefined,
+      name: inquiry.name,
+      email: inquiry.email,
+      phone: inquiry.phone,
+      productSlug: inquiry.productSlug,
+      message: inquiry.message,
+      messagePreview: buildMessagePreview(inquiry.message),
+      href:
+        inquiry.productSlug && inquiry.itemType
+          ? getProductHref(inquiry.itemType, inquiry.productSlug)
+          : undefined,
+      adminHref: `/admin/inquiries/${inquiry.id}`,
+      createdAt: inquiry.createdAt,
+      userName: inquiry.user?.name,
+      userEmail: inquiry.user?.email,
+    };
+  } catch {
+    return null;
   }
 }
 

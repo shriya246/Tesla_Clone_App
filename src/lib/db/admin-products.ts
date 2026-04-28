@@ -378,3 +378,59 @@ export async function updateAdminProduct(
     }
   }
 }
+
+export async function deleteAdminProduct(
+  category: AdminProductCategoryConfig["category"],
+  id: string,
+) {
+  switch (category) {
+    case "vehicles": {
+      const record = await prisma.vehicle.delete({
+        where: { id },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+
+      return {
+        id: record.id,
+        slug: record.slug,
+        category,
+        itemType: "VEHICLE" as const,
+      };
+    }
+    case "energy": {
+      const record = await prisma.energyProduct.delete({
+        where: { id },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+
+      return {
+        id: record.id,
+        slug: record.slug,
+        category,
+        itemType: "ENERGY_PRODUCT" as const,
+      };
+    }
+    case "shop": {
+      const record = await prisma.shopProduct.delete({
+        where: { id },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+
+      return {
+        id: record.id,
+        slug: record.slug,
+        category,
+        itemType: "SHOP_PRODUCT" as const,
+      };
+    }
+  }
+}

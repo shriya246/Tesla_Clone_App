@@ -49,6 +49,7 @@ export function InquiryForm({
       email: "",
       phone: "",
       message: defaultMessage,
+      website: "",
     },
   });
 
@@ -103,6 +104,7 @@ export function InquiryForm({
       email: "",
       phone: "",
       message: defaultMessage,
+      website: "",
     });
 
     setResponseState({
@@ -196,6 +198,17 @@ export function InquiryForm({
         </div>
 
         <div className="space-y-2">
+          <label className="sr-only" htmlFor={`${type}-website`}>
+            Leave this field empty
+          </label>
+          <input
+            {...register("website")}
+            autoComplete="off"
+            className="hidden"
+            id={`${type}-website`}
+            tabIndex={-1}
+            type="text"
+          />
           <label className={labelClasses} htmlFor={`${type}-message`}>
             {messageLabel}
           </label>
@@ -230,7 +243,9 @@ export function InquiryForm({
               <p className="font-medium">{successTitle}</p>
             ) : null}
             <p className={responseState.success ? "mt-2" : ""}>
-              {responseState.success ? successMessage : responseState.message}
+              {responseState.success
+                ? responseState.message || successMessage
+                : responseState.message}
             </p>
           </div>
         ) : null}

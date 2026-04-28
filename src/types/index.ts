@@ -164,6 +164,7 @@ export interface InquiryFormFields {
   email: string;
   phone?: string;
   message: string;
+  website?: string;
 }
 
 export interface InquiryPayload extends InquiryFormFields {
@@ -175,6 +176,8 @@ export interface InquiryPayload extends InquiryFormFields {
 export interface InquiryApiResponse {
   success: boolean;
   message: string;
+  emailStatus?: "sent" | "partial_failure" | "skipped";
+  retryAfterSeconds?: number;
   fieldErrors?: Partial<Record<keyof InquiryFormFields, string[]>>;
 }
 
@@ -243,10 +246,13 @@ export interface AdminInquiryListItem {
   message: string;
   messagePreview: string;
   href?: string;
+  adminHref: string;
   createdAt: Date;
   userName?: string | null;
   userEmail?: string | null;
 }
+
+export interface AdminInquiryDetailItem extends AdminInquiryListItem {}
 
 export interface AdminDashboardSummary {
   vehicleCount: number;

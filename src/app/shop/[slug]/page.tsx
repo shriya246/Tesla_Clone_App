@@ -13,6 +13,7 @@ import { RelatedItems } from "@/components/RelatedItems";
 import { isFavorited } from "@/lib/db/favorites";
 import { getAllShopProducts, getShopProductBySlug } from "@/lib/db/shop";
 import { formatSlug } from "@/lib/formatSlug";
+import { buildPageMetadata } from "@/lib/metadata";
 
 interface ShopDetailPageProps {
   params: Promise<{
@@ -29,15 +30,20 @@ export async function generateMetadata({
   const product = await getShopProductBySlug(slug);
 
   if (!product) {
-    return {
+    return buildPageMetadata({
       title: `${formatSlug(slug)} | Shop | Tesla Inspired`,
-    };
+      description:
+        "Explore Tesla-inspired accessories, charging gear, and product support.",
+      path: `/shop/${slug}`,
+    });
   }
 
-  return {
+  return buildPageMetadata({
     title: `${product.title} | Shop | Tesla Inspired`,
     description: product.description,
-  };
+    path: `/shop/${product.slug}`,
+    image: product.image,
+  });
 }
 
 export default async function ShopDetailPage({ params }: ShopDetailPageProps) {

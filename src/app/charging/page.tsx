@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ChargingSection } from "@/components/ChargingSection";
 import { FeatureCard } from "@/components/FeatureCard";
 import { Footer } from "@/components/Footer";
@@ -9,6 +10,20 @@ import {
   chargingNetworkSection,
   chargingPageHeader,
 } from "@/data/charging";
+import { buildPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Charging | Tesla Inspired",
+  description:
+    "Understand the Tesla-inspired charging experience across home charging, road-trip planning, and network readiness.",
+  path: "/charging",
+  keywords: [
+    "EV charging",
+    "Supercharger network",
+    "home charging",
+    "charging readiness",
+  ],
+});
 
 export default function ChargingPage() {
   return (
