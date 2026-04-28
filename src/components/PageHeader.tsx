@@ -1,4 +1,5 @@
 import { AppButton } from "@/components/AppButton";
+import { buildMediaBackgroundStyle } from "@/lib/media";
 import type { PageHeaderData } from "@/types";
 
 interface PageHeaderProps {
@@ -9,15 +10,12 @@ export function PageHeader({ header }: PageHeaderProps) {
   return (
     <section
       className="section-shell relative overflow-hidden pt-32 pb-14 sm:pb-20"
-      style={{
-        backgroundColor: "#06070a",
-        backgroundImage: header.image
-          ? `linear-gradient(to bottom, rgba(6, 7, 10, 0.58), rgba(6, 7, 10, 0.84)), url(${header.image})`
+      style={buildMediaBackgroundStyle({
+        image: header.image,
+        overlay: header.image
+          ? "linear-gradient(to bottom, rgba(6, 7, 10, 0.58), rgba(6, 7, 10, 0.84))"
           : "linear-gradient(to bottom, rgba(17, 24, 39, 0.92), rgba(6, 7, 10, 1))",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-      }}
+      })}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_34%)]" />
 

@@ -1,3 +1,4 @@
+import { buildMediaBackgroundStyle } from "@/lib/media";
 import type { FeatureSectionData } from "@/types";
 
 interface FeatureCardProps {
@@ -9,13 +10,12 @@ export function FeatureCard({ feature }: FeatureCardProps) {
     <article className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] shadow-halo backdrop-blur-sm">
       <div
         className="relative h-64 overflow-hidden sm:h-72"
-        style={{
+        style={buildMediaBackgroundStyle({
+          image: feature.image,
+          overlay:
+            "linear-gradient(to bottom, rgba(12, 15, 21, 0.08), rgba(12, 15, 21, 0.4))",
           backgroundColor: "#0c0f15",
-          backgroundImage: `linear-gradient(to bottom, rgba(12, 15, 21, 0.08), rgba(12, 15, 21, 0.4)), url(${feature.image})`,
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
-        }}
+        })}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_32%)]" />
       </div>

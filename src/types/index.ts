@@ -150,3 +150,127 @@ export interface ShopProductData {
 }
 
 export interface ShopFeatureData extends FeatureSectionData {}
+
+export type InquiryTypeValue =
+  | "VEHICLE_DEMO_REQUEST"
+  | "PRODUCT_INQUIRY"
+  | "ENERGY_CONSULTATION"
+  | "GENERAL";
+
+export type InquiryItemTypeValue = "VEHICLE" | "ENERGY_PRODUCT" | "SHOP_PRODUCT";
+
+export interface InquiryFormFields {
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+}
+
+export interface InquiryPayload extends InquiryFormFields {
+  type: InquiryTypeValue;
+  itemType?: InquiryItemTypeValue;
+  productSlug?: string;
+}
+
+export interface InquiryApiResponse {
+  success: boolean;
+  message: string;
+  fieldErrors?: Partial<Record<keyof InquiryFormFields, string[]>>;
+}
+
+export interface InquiryFormProps {
+  title: string;
+  description: string;
+  submitLabel: string;
+  successTitle: string;
+  successMessage: string;
+  type: InquiryTypeValue;
+  itemType?: InquiryItemTypeValue;
+  productSlug?: string;
+  contextLabel?: string;
+  contextValue?: string;
+  messageLabel?: string;
+  messagePlaceholder?: string;
+  defaultMessage?: string;
+}
+
+export type FavoriteItemTypeValue = "VEHICLE" | "ENERGY_PRODUCT" | "SHOP_PRODUCT";
+
+export type AdminProductCategory = "vehicles" | "energy" | "shop";
+
+export interface FavoriteDisplayItem {
+  itemType: FavoriteItemTypeValue;
+  itemSlug: string;
+  title: string;
+  description: string;
+  href: string;
+  image: string;
+  eyebrow: string;
+  price?: string;
+}
+
+export interface AdminProductListItem {
+  id: string;
+  category: AdminProductCategory;
+  itemType: FavoriteItemTypeValue;
+  categoryLabel: string;
+  title: string;
+  slug: string;
+  href: string;
+  adminHref: string;
+  summary: string;
+  image: string;
+  isRemoteImage: boolean;
+  price?: string;
+  updatedAt: Date;
+}
+
+export interface AdminProductCollection {
+  vehicles: AdminProductListItem[];
+  energyProducts: AdminProductListItem[];
+  shopProducts: AdminProductListItem[];
+  totalCount: number;
+}
+
+export interface AdminInquiryListItem {
+  id: string;
+  type: InquiryTypeValue;
+  itemType?: InquiryItemTypeValue;
+  name: string;
+  email: string;
+  phone?: string | null;
+  productSlug?: string | null;
+  message: string;
+  messagePreview: string;
+  href?: string;
+  createdAt: Date;
+  userName?: string | null;
+  userEmail?: string | null;
+}
+
+export interface AdminDashboardSummary {
+  vehicleCount: number;
+  energyCount: number;
+  shopCount: number;
+  totalProducts: number;
+  inquiryCount: number;
+  favoriteCount: number;
+  userCount: number;
+}
+
+export interface AdminMediaUploadResponse {
+  success: boolean;
+  message: string;
+  imageUrl?: string;
+  publicId?: string;
+  fieldErrors?: {
+    file?: string[];
+  };
+}
+
+export interface AdminProductMutationResponse {
+  success: boolean;
+  message: string;
+  redirectTo?: string;
+  fieldErrors?: Record<string, string[] | undefined>;
+}

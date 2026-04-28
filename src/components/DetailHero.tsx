@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+
 import { AppButton } from "@/components/AppButton";
+import { buildMediaBackgroundStyle } from "@/lib/media";
 import type { DetailHeroData } from "@/types";
 
 interface DetailHeroProps {
@@ -11,13 +13,11 @@ export function DetailHero({ hero, children }: DetailHeroProps) {
   return (
     <section
       className="section-shell relative overflow-hidden pt-32 pb-14 sm:pb-20"
-      style={{
-        backgroundColor: "#06070a",
-        backgroundImage: `linear-gradient(to bottom, rgba(6, 7, 10, 0.58), rgba(6, 7, 10, 0.88)), url(${hero.image})`,
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-      }}
+      style={buildMediaBackgroundStyle({
+        image: hero.image,
+        overlay:
+          "linear-gradient(to bottom, rgba(6, 7, 10, 0.58), rgba(6, 7, 10, 0.88))",
+      })}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_30%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_28%)]" />

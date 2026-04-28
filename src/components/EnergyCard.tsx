@@ -1,5 +1,7 @@
 import Link from "next/link";
+
 import { AppButton } from "@/components/AppButton";
+import { buildMediaBackgroundStyle } from "@/lib/media";
 import type { EnergySectionData } from "@/types";
 
 interface EnergyCardProps {
@@ -12,13 +14,12 @@ export function EnergyCard({ section, detailHref }: EnergyCardProps) {
     <article className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] shadow-halo backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-white/18 hover:bg-white/[0.05]">
       <div
         className="relative h-72 overflow-hidden sm:h-80"
-        style={{
+        style={buildMediaBackgroundStyle({
+          image: section.image,
+          overlay:
+            "linear-gradient(to bottom, rgba(12, 15, 21, 0.1), rgba(12, 15, 21, 0.48))",
           backgroundColor: "#0c0f15",
-          backgroundImage: `linear-gradient(to bottom, rgba(12, 15, 21, 0.1), rgba(12, 15, 21, 0.48)), url(${section.image})`,
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
-        }}
+        })}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_34%)] transition duration-500 group-hover:opacity-80" />
       </div>

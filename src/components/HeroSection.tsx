@@ -1,4 +1,5 @@
 import { AppButton } from "@/components/AppButton";
+import { buildMediaBackgroundStyle } from "@/lib/media";
 import type { HeroSectionData } from "@/types";
 
 interface HeroSectionProps {
@@ -9,13 +10,11 @@ export function HeroSection({ section }: HeroSectionProps) {
   return (
     <section
       className="section-shell relative flex min-h-screen items-center justify-center overflow-hidden py-24 text-center"
-      style={{
-        backgroundColor: "#06070a",
-        backgroundImage: `linear-gradient(to bottom, rgba(6, 7, 10, 0.35), rgba(6, 7, 10, 0.78)), url(${section.image})`,
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-      }}
+      style={buildMediaBackgroundStyle({
+        image: section.image,
+        overlay:
+          "linear-gradient(to bottom, rgba(6, 7, 10, 0.35), rgba(6, 7, 10, 0.78))",
+      })}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_34%)]" />
 

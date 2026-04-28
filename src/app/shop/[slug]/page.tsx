@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { FavoriteItemType } from "@prisma/client";
+import { auth } from "@/auth";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DetailHero } from "@/components/DetailHero";
+import { FavoriteToggle } from "@/components/FavoriteToggle";
 import { Footer } from "@/components/Footer";
+import { InquiryForm } from "@/components/forms/InquiryForm";
 import { Navbar } from "@/components/Navbar";
 import { PriceCallout } from "@/components/PriceCallout";
 import { RelatedItems } from "@/components/RelatedItems";
-import { shopProducts } from "@/data/shop";
+import { isFavorited } from "@/lib/db/favorites";
+import { getAllShopProducts, getShopProductBySlug } from "@/lib/db/shop";
 import { formatSlug } from "@/lib/formatSlug";
-import { getShopItemBySlug } from "@/lib/getShopItemBySlug";
 
 interface ShopDetailPageProps {
   params: Promise<{
@@ -16,17 +20,13 @@ interface ShopDetailPageProps {
   }>;
 }
 
-export function generateStaticParams() {
-  return shopProducts.map((product) => ({
-    slug: product.slug,
-  }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
 }: ShopDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = getShopItemBySlug(slug);
+  const product = await getShopProductBySlug(slug);
 
   if (!product) {
     return {
@@ -42,11 +42,23 @@ export async function generateMetadata({
 
 export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
   const { slug } = await params;
-  const product = getShopItemBySlug(slug);
+  const [product, shopProducts, session] = await Promise.all([
+    getShopProductBySlug(slug),
+    getAllShopProducts(),
+    auth().catch(() => null),
+  ]);
 
   if (!product) {
     notFound();
   }
+
+  const favoriteState = session?.user?.id
+    ? await isFavorited({
+        userId: session.user.id,
+        itemType: FavoriteItemType.SHOP_PRODUCT,
+        itemSlug: product.slug,
+      })
+    : false;
 
   const relatedProducts = shopProducts
     .filter((item) => item.slug !== product.slug)
@@ -112,6 +124,17 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
                   {product.badge}
                 </span>
               ) : null}
+
+              <div className="mt-6">
+                <FavoriteToggle
+                  isFavorited={favoriteState}
+                  isSignedIn={Boolean(session?.user?.id)}
+                  itemSlug={product.slug}
+                  itemTitle={product.title}
+                  itemType="SHOP_PRODUCT"
+                  redirectPath={`/shop/${product.slug}`}
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -152,6 +175,72 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
                 </article>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="section-shell border-t border-white/8 bg-slate-950 py-16 lg:py-20">
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
+                Product Inquiry
+              </p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+                Ask about this product before the next step.
+              </h2>
+              <p className="mt-5 max-w-2xl text-sm leading-7 text-white/72 sm:text-base">
+                Use this inquiry flow for product questions, compatibility
+                details, bundle fit, or anything else you want clarified about{" "}
+                {product.title}.
+              </p>
+
+              <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
+                <p className="text-xs font-medium uppercase tracking-[0.28em] text-white/38">
+                  Helpful topics
+                </p>
+                <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      Compatibility
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/62">
+                      Ask how the product fits your setup or use case.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      Product details
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/62">
+                      Use the message field for questions before you commit.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      Purchase planning
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/62">
+                      We can respond with context tied to this specific item.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <InquiryForm
+              contextLabel="Product"
+              contextValue={product.title}
+              defaultMessage={`I have a question about ${product.title}.`}
+              description="Tell us what you are comparing, what compatibility questions you have, or what you want clarified about this item."
+              itemType="SHOP_PRODUCT"
+              messageLabel="What would you like to ask?"
+              messagePlaceholder={`I would like to learn more about ${product.title}, how it fits my setup, and what to consider before purchasing.`}
+              productSlug={product.slug}
+              submitLabel="Send Product Inquiry"
+              successMessage={`We have received your inquiry about ${product.title} and will follow up soon.`}
+              successTitle="Inquiry received"
+              title="Ask About This Product"
+              type="PRODUCT_INQUIRY"
+            />
           </div>
         </section>
 

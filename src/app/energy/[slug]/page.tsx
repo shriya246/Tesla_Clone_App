@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { FavoriteItemType } from "@prisma/client";
+import { auth } from "@/auth";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DetailHero } from "@/components/DetailHero";
+import { FavoriteToggle } from "@/components/FavoriteToggle";
 import { Footer } from "@/components/Footer";
+import { InquiryForm } from "@/components/forms/InquiryForm";
 import { Navbar } from "@/components/Navbar";
 import { RelatedItems } from "@/components/RelatedItems";
-import { energyProducts } from "@/data/energy";
+import {
+  getAllEnergyProducts,
+  getEnergyProductBySlug,
+} from "@/lib/db/energy";
+import { isFavorited } from "@/lib/db/favorites";
 import { formatSlug } from "@/lib/formatSlug";
-import { getEnergyBySlug } from "@/lib/getEnergyBySlug";
 
 interface EnergyDetailPageProps {
   params: Promise<{
@@ -15,17 +22,13 @@ interface EnergyDetailPageProps {
   }>;
 }
 
-export function generateStaticParams() {
-  return energyProducts.map((product) => ({
-    slug: product.slug,
-  }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
 }: EnergyDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = getEnergyBySlug(slug);
+  const product = await getEnergyProductBySlug(slug);
 
   if (!product) {
     return {
@@ -43,11 +46,23 @@ export default async function EnergyDetailPage({
   params,
 }: EnergyDetailPageProps) {
   const { slug } = await params;
-  const product = getEnergyBySlug(slug);
+  const [product, energyProducts, session] = await Promise.all([
+    getEnergyProductBySlug(slug),
+    getAllEnergyProducts(),
+    auth().catch(() => null),
+  ]);
 
   if (!product) {
     notFound();
   }
+
+  const favoriteState = session?.user?.id
+    ? await isFavorited({
+        userId: session.user.id,
+        itemType: FavoriteItemType.ENERGY_PRODUCT,
+        itemSlug: product.slug,
+      })
+    : false;
 
   const relatedProducts = energyProducts
     .filter((item) => item.slug !== product.slug)
@@ -109,6 +124,17 @@ export default async function EnergyDetailPage({
                 Designed to fit into a broader home-energy journey with a clear
                 path from product discovery to a more complete ecosystem view.
               </p>
+
+              <div className="mt-6">
+                <FavoriteToggle
+                  isFavorited={favoriteState}
+                  isSignedIn={Boolean(session?.user?.id)}
+                  itemSlug={product.slug}
+                  itemTitle={product.title}
+                  itemType="ENERGY_PRODUCT"
+                  redirectPath={`/energy/${product.slug}`}
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -171,6 +197,73 @@ export default async function EnergyDetailPage({
                 </article>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="section-shell border-t border-white/8 bg-slate-950 py-16 lg:py-20">
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
+                Consultation
+              </p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+                Request a tailored energy conversation.
+              </h2>
+              <p className="mt-5 max-w-2xl text-sm leading-7 text-white/72 sm:text-base">
+                Share a little about your home, project timing, or the kind of
+                energy setup you are exploring. We can follow up with product
+                guidance specific to {product.title}.
+              </p>
+
+              <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
+                <p className="text-xs font-medium uppercase tracking-[0.28em] text-white/38">
+                  Best for
+                </p>
+                <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      Home planning
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/62">
+                      Ask about system fit, timeline, and the broader energy
+                      setup.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      Product comparison
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/62">
+                      Mention whether you are comparing solar, storage, or both.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      Guided next steps
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/62">
+                      We can route your request with the right product context.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <InquiryForm
+              contextLabel="Energy Product"
+              contextValue={product.title}
+              defaultMessage={`I would like to request a consultation about ${product.title}.`}
+              description="Tell us about your energy goals, the kind of setup you are considering, or what you want to understand before moving forward."
+              itemType="ENERGY_PRODUCT"
+              messageLabel="What are you planning for your home?"
+              messagePlaceholder={`I would like to understand whether ${product.title} fits my home, usage goals, and next-step planning.`}
+              productSlug={product.slug}
+              submitLabel="Request Consultation"
+              successMessage={`We have received your consultation request for ${product.title} and will follow up soon.`}
+              successTitle="Consultation request received"
+              title="Request a Consultation"
+              type="ENERGY_CONSULTATION"
+            />
           </div>
         </section>
 

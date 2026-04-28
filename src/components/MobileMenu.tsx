@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import type { NavigationItem } from "@/types";
 
@@ -20,6 +21,12 @@ function isRouteActive(pathname: string, href: string) {
 
 export function MobileMenu({ isOpen, items, onClose }: MobileMenuProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const authHref = session?.user ? "/account" : "/signin";
+  const authLabel = session?.user ? "Account" : "Sign In";
+  const isAdmin = session?.user?.role === "ADMIN";
+  const isAccountActive = isRouteActive(pathname, authHref);
+  const isAdminActive = isRouteActive(pathname, "/admin");
 
   return (
     <div
@@ -86,6 +93,40 @@ export function MobileMenu({ isOpen, items, onClose }: MobileMenuProps) {
             );
           })}
         </nav>
+
+        <div className="mt-5 border-t border-white/10 pt-5">
+          <div className="flex flex-col gap-3">
+            <Link
+              href={authHref}
+              onClick={onClose}
+              aria-current={isAccountActive ? "page" : undefined}
+              className={[
+                "inline-flex min-h-[3rem] w-full items-center justify-center rounded-full border px-4 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+                isAccountActive
+                  ? "border-white/16 bg-white/14 text-white"
+                  : "border-white/10 bg-white/10 text-white/84 hover:bg-white/18 hover:text-white",
+              ].join(" ")}
+            >
+              {authLabel}
+            </Link>
+
+            {isAdmin ? (
+              <Link
+                href="/admin"
+                onClick={onClose}
+                aria-current={isAdminActive ? "page" : undefined}
+                className={[
+                  "inline-flex min-h-[3rem] w-full items-center justify-center rounded-full border px-4 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+                  isAdminActive
+                    ? "border-white/16 bg-white text-slate-950"
+                    : "border-white/10 bg-white px-4 text-slate-950 hover:bg-white/90",
+                ].join(" ")}
+              >
+                Admin Dashboard
+              </Link>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );

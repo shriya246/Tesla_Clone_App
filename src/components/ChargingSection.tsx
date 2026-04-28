@@ -1,5 +1,6 @@
 import { AppButton } from "@/components/AppButton";
 import { StatCard } from "@/components/StatCard";
+import { buildMediaBackgroundStyle } from "@/lib/media";
 import type { ChargingSectionData } from "@/types";
 
 interface ChargingSectionProps {
@@ -15,13 +16,11 @@ export function ChargingSection({ section }: ChargingSectionProps) {
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
         <div
           className="relative overflow-hidden rounded-[2rem] border border-white/10 shadow-halo"
-          style={{
-            backgroundColor: "#06070a",
-            backgroundImage: `linear-gradient(to bottom, rgba(6, 7, 10, 0.12), rgba(6, 7, 10, 0.68)), url(${section.image})`,
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "cover",
-          }}
+          style={buildMediaBackgroundStyle({
+            image: section.image,
+            overlay:
+              "linear-gradient(to bottom, rgba(6, 7, 10, 0.12), rgba(6, 7, 10, 0.68))",
+          })}
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_35%)]" />
           <div className="relative z-10 flex min-h-[30rem] flex-col justify-between p-6 sm:min-h-[36rem] sm:p-8 lg:p-10">

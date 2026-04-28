@@ -1,5 +1,7 @@
 import Link from "next/link";
+
 import { AppButton } from "@/components/AppButton";
+import { buildMediaBackgroundStyle } from "@/lib/media";
 import type { ProductSectionData } from "@/types";
 
 interface ProductSectionProps {
@@ -20,13 +22,11 @@ export function ProductSection({
   return (
     <section
       className="section-shell relative flex min-h-screen items-end justify-center overflow-hidden py-16 text-center"
-      style={{
-        backgroundColor: "#06070a",
-        backgroundImage: `linear-gradient(to bottom, rgba(6, 7, 10, 0.14), rgba(6, 7, 10, 0.26) 34%, rgba(6, 7, 10, 0.78)), url(${section.image})`,
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-      }}
+      style={buildMediaBackgroundStyle({
+        image: section.image,
+        overlay:
+          "linear-gradient(to bottom, rgba(6, 7, 10, 0.14), rgba(6, 7, 10, 0.26) 34%, rgba(6, 7, 10, 0.78))",
+      })}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_34%)]" />
       <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-slate-950/60 to-transparent" />

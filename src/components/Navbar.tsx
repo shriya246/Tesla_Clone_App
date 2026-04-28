@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MobileMenu } from "@/components/MobileMenu";
@@ -29,7 +30,13 @@ function isRouteActive(pathname: string, href: string) {
 
 export function Navbar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const authHref = session?.user ? "/account" : "/signin";
+  const authLabel = session?.user ? "Account" : "Sign In";
+  const isAdmin = session?.user?.role === "ADMIN";
+  const isAccountActive = isRouteActive(pathname, authHref);
+  const isAdminActive = isRouteActive(pathname, "/admin");
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -102,6 +109,34 @@ export function Navbar() {
                   <span aria-hidden="true">{item.symbol}</span>
                 </button>
               ))}
+
+              <Link
+                href={authHref}
+                aria-current={isAccountActive ? "page" : undefined}
+                className={[
+                  "inline-flex h-10 items-center justify-center rounded-full border px-4 text-sm font-medium transition",
+                  isAccountActive
+                    ? "border-white/16 bg-white/14 text-white"
+                    : "border-white/10 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white",
+                ].join(" ")}
+              >
+                {authLabel}
+              </Link>
+
+              {isAdmin ? (
+                <Link
+                  href="/admin"
+                  aria-current={isAdminActive ? "page" : undefined}
+                  className={[
+                    "inline-flex h-10 items-center justify-center rounded-full border px-4 text-sm font-medium transition",
+                    isAdminActive
+                      ? "border-white/16 bg-white text-slate-950"
+                      : "border-white/10 bg-black/24 text-white/76 hover:border-white/18 hover:bg-white/12 hover:text-white",
+                  ].join(" ")}
+                >
+                  Admin
+                </Link>
+              ) : null}
             </div>
 
             <button

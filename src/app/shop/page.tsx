@@ -4,9 +4,14 @@ import { Navbar } from "@/components/Navbar";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionGrid } from "@/components/SectionGrid";
 import { ShopCard } from "@/components/ShopCard";
-import { shopFeatures, shopPageHeader, shopProducts } from "@/data/shop";
+import { shopFeatures, shopPageHeader } from "@/data/shop";
+import { getAllShopProducts } from "@/lib/db/shop";
 
-export default function ShopPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ShopPage() {
+  const shopProducts = await getAllShopProducts();
+
   return (
     <>
       <Navbar />

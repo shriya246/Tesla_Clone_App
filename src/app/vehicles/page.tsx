@@ -2,9 +2,14 @@ import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { PageHeader } from "@/components/PageHeader";
 import { ProductSection } from "@/components/ProductSection";
-import { vehicleLineup, vehiclesPageHeader } from "@/data/vehicles";
+import { vehiclesPageHeader } from "@/data/vehicles";
+import { getAllVehicles } from "@/lib/db/vehicles";
 
-export default function VehiclesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function VehiclesPage() {
+  const vehicleLineup = await getAllVehicles();
+
   return (
     <>
       <Navbar />

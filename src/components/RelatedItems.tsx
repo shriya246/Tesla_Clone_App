@@ -1,4 +1,6 @@
 import Link from "next/link";
+
+import { buildMediaBackgroundStyle } from "@/lib/media";
 import type { RelatedItemData } from "@/types";
 
 interface RelatedItemsProps {
@@ -40,13 +42,12 @@ export function RelatedItems({
             >
               <div
                 className="relative h-64 overflow-hidden"
-                style={{
+                style={buildMediaBackgroundStyle({
+                  image: item.image,
+                  overlay:
+                    "linear-gradient(to bottom, rgba(12, 15, 21, 0.14), rgba(12, 15, 21, 0.62))",
                   backgroundColor: "#0c0f15",
-                  backgroundImage: `linear-gradient(to bottom, rgba(12, 15, 21, 0.14), rgba(12, 15, 21, 0.62)), url(${item.image})`,
-                  backgroundPosition: "center",
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "cover",
-                }}
+                })}
               >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_32%)] transition duration-500 group-hover:opacity-85" />
                 <div className="absolute inset-x-5 top-5 flex items-center justify-between gap-4">

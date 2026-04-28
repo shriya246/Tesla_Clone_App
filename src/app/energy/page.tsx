@@ -4,13 +4,14 @@ import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionGrid } from "@/components/SectionGrid";
-import {
-  energyFeatures,
-  energyPageHeader,
-  energyProducts,
-} from "@/data/energy";
+import { energyFeatures, energyPageHeader } from "@/data/energy";
+import { getAllEnergyProducts } from "@/lib/db/energy";
 
-export default function EnergyPage() {
+export const dynamic = "force-dynamic";
+
+export default async function EnergyPage() {
+  const energyProducts = await getAllEnergyProducts();
+
   return (
     <>
       <Navbar />

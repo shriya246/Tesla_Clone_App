@@ -1,4 +1,5 @@
 import { AppButton } from "@/components/AppButton";
+import { buildMediaBackgroundStyle } from "@/lib/media";
 import type { OfferSectionData } from "@/types";
 
 interface OfferCardProps {
@@ -9,13 +10,11 @@ export function OfferCard({ offer }: OfferCardProps) {
   return (
     <article
       className="group relative flex min-h-[30rem] overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950 shadow-halo"
-      style={{
-        backgroundColor: "#06070a",
-        backgroundImage: `linear-gradient(to bottom, rgba(6, 7, 10, 0.12), rgba(6, 7, 10, 0.78)), url(${offer.image})`,
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-      }}
+      style={buildMediaBackgroundStyle({
+        image: offer.image,
+        overlay:
+          "linear-gradient(to bottom, rgba(6, 7, 10, 0.12), rgba(6, 7, 10, 0.78))",
+      })}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.15),transparent_30%)] transition duration-500 group-hover:opacity-80" />
 
