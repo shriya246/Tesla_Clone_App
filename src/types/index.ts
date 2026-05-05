@@ -126,6 +126,8 @@ export interface VehicleData extends ProductSectionData {
   longDescription: string;
   specs: DetailSpec[];
   highlights: DetailFeature[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface EnergyProductData extends EnergySectionData {
@@ -133,6 +135,8 @@ export interface EnergyProductData extends EnergySectionData {
   longDescription: string;
   highlights: DetailFeature[];
   supportingFeatures: DetailFeature[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface ShopProductData {
@@ -147,9 +151,130 @@ export interface ShopProductData {
   badge?: string;
   highlights: DetailFeature[];
   specs: DetailSpec[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface ShopFeatureData extends FeatureSectionData {}
+
+export type VehicleBuildOptionKey =
+  | "trim"
+  | "range"
+  | "exteriorColor"
+  | "interior";
+
+export interface VehicleConfiguratorOption {
+  id: string;
+  label: string;
+  description: string;
+  priceDelta: number;
+  swatch?: string;
+  badge?: string;
+}
+
+export interface VehicleConfiguratorOptionGroup {
+  key: VehicleBuildOptionKey;
+  label: string;
+  description: string;
+  options: VehicleConfiguratorOption[];
+}
+
+export interface VehicleBuildSelectionIds {
+  trim: string;
+  range: string;
+  exteriorColor: string;
+  interior: string;
+}
+
+export interface SavedBuildOptionSelection {
+  key: VehicleBuildOptionKey;
+  label: string;
+  optionId: string;
+  optionLabel: string;
+  description: string;
+  priceDelta: number;
+  swatch?: string;
+  badge?: string;
+}
+
+export interface SavedBuildSelectedOptions {
+  trim: SavedBuildOptionSelection;
+  range: SavedBuildOptionSelection;
+  exteriorColor: SavedBuildOptionSelection;
+  interior: SavedBuildOptionSelection;
+}
+
+export interface VehicleConfiguratorDefinition {
+  vehicleSlug: string;
+  vehicleTitle: string;
+  vehicleSubtitle: string;
+  vehicleImage: string;
+  vehiclePrice: string;
+  basePriceValue: number;
+  groups: VehicleConfiguratorOptionGroup[];
+  defaultSelectionIds: VehicleBuildSelectionIds;
+}
+
+export interface VehicleConfiguratorState {
+  selectionIds: VehicleBuildSelectionIds;
+  selectedOptions: SavedBuildSelectedOptions;
+  estimatedPrice: string;
+  estimatedPriceValue: number;
+}
+
+export interface SavedBuildData {
+  id: string;
+  userId: string;
+  vehicleSlug: string;
+  vehicleTitle: string;
+  vehicleImage: string;
+  vehiclePrice: string;
+  buildLabel?: string;
+  selectedOptions: SavedBuildSelectedOptions;
+  createdAt: Date;
+  updatedAt: Date;
+  estimatedPrice: string;
+  buildHref: string;
+  configureHref: string;
+}
+
+export type SearchProductType = "vehicle" | "energy" | "shop";
+
+export type SearchFilterType = "all" | SearchProductType;
+
+export type SearchEventScopeValue = "ALL" | "VEHICLE" | "ENERGY" | "SHOP";
+
+export type SearchSortOption =
+  | "featured"
+  | "relevance"
+  | "title"
+  | "price-asc"
+  | "price-desc"
+  | "updated";
+
+export interface SearchResultItem {
+  id: string;
+  type: SearchProductType;
+  typeLabel: string;
+  slug: string;
+  href: string;
+  title: string;
+  description: string;
+  image: string;
+  ctaLabel: string;
+  price?: string;
+  badge?: string;
+  updatedAt?: Date;
+}
+
+export interface SearchSuggestion {
+  id: string;
+  type: SearchProductType;
+  typeLabel: string;
+  href: string;
+  title: string;
+  price?: string;
+}
 
 export type InquiryTypeValue =
   | "VEHICLE_DEMO_REQUEST"
@@ -226,6 +351,7 @@ export interface AdminProductListItem {
   isRemoteImage: boolean;
   price?: string;
   updatedAt: Date;
+  engagement: AdminProductEngagementMetrics;
 }
 
 export interface AdminProductCollection {
@@ -261,7 +387,98 @@ export interface AdminDashboardSummary {
   totalProducts: number;
   inquiryCount: number;
   favoriteCount: number;
+  savedBuildCount: number;
+  searchEventCount: number;
+  recentlyViewedCount: number;
   userCount: number;
+}
+
+export interface AdminProductEngagementMetrics {
+  views: number;
+  favorites: number;
+  savedBuilds: number;
+  inquiries: number;
+  totalSignals: number;
+  weightedScore: number;
+}
+
+export interface AdminCountTrendItem {
+  key: string;
+  label: string;
+  count: number;
+  href?: string;
+}
+
+export interface AdminTimeTrendPoint {
+  label: string;
+  count: number;
+}
+
+export interface AdminCategoryEngagementItem {
+  itemType: FavoriteItemTypeValue;
+  label: string;
+  views: number;
+  favorites: number;
+  savedBuilds: number;
+  inquiries: number;
+  totalSignals: number;
+  weightedScore: number;
+}
+
+export interface AdminProductPopularityData {
+  totalTrackedViews: number;
+  totalFavorites: number;
+  totalSavedBuilds: number;
+  totalProductInquiries: number;
+  activeProducts: number;
+  topViewedVehicles: AdminProductListItem[];
+  topViewedProducts: AdminProductListItem[];
+  mostFavoritedItems: AdminProductListItem[];
+  mostSavedBuildVehicles: AdminProductListItem[];
+  topCategories: AdminCategoryEngagementItem[];
+  productEngagementTable: AdminProductListItem[];
+}
+
+export interface AdminInquiryTrendsData {
+  totalCount: number;
+  recent30DayCount: number;
+  byType: AdminCountTrendItem[];
+  byItemType: AdminCountTrendItem[];
+  topProductSlugs: AdminCountTrendItem[];
+  recentDailyVolume: AdminTimeTrendPoint[];
+}
+
+export interface AdminSearchQueryTrend {
+  normalizedQuery: string;
+  label: string;
+  count: number;
+  averageResultCount: number;
+  zeroResultCount: number;
+  scopeLabel: string;
+  topResultLabel?: string;
+  lastSearchedAt: Date;
+}
+
+export interface AdminSearchScopeTrend {
+  scope: SearchEventScopeValue;
+  label: string;
+  count: number;
+  averageResultCount: number;
+}
+
+export interface AdminSearchTrendsData {
+  totalCount: number;
+  recent30DayCount: number;
+  zeroResultCount: number;
+  topQueries: AdminSearchQueryTrend[];
+  byScope: AdminSearchScopeTrend[];
+  recentDailyVolume: AdminTimeTrendPoint[];
+}
+
+export interface AdminInsightsSnapshot {
+  topViewedProduct: AdminProductListItem | null;
+  topFavoritedProduct: AdminProductListItem | null;
+  topSearchQuery: AdminSearchQueryTrend | null;
 }
 
 export interface AdminMediaUploadResponse {
@@ -279,4 +496,14 @@ export interface AdminProductMutationResponse {
   message: string;
   redirectTo?: string;
   fieldErrors?: Record<string, string[] | undefined>;
+}
+
+export interface SavedBuildMutationResponse {
+  success: boolean;
+  message: string;
+  buildId?: string;
+  redirectTo?: string;
+  fieldErrors?: {
+    buildLabel?: string[];
+  };
 }

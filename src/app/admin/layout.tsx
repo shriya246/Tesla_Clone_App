@@ -35,12 +35,12 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
                   Admin
                 </p>
                 <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                  Catalog and inquiry operations, finally practical day to day.
+                  Catalog, insights, and inquiry operations that stay practical day to day.
                 </h1>
                 <p className="mt-5 text-sm leading-7 text-white/68 sm:text-base">
                   Create, edit, and remove products, review saved inquiries, and
-                  keep the Tesla-inspired MVP manageable without turning admin into
-                  an overbuilt CMS.
+                  keep a tighter view on product demand and discovery behavior
+                  without turning admin into an overbuilt CMS or BI stack.
                 </p>
               </div>
 

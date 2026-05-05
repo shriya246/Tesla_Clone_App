@@ -35,6 +35,7 @@ export function Navbar() {
   const authHref = session?.user ? "/account" : "/signin";
   const authLabel = session?.user ? "Account" : "Sign In";
   const isAdmin = session?.user?.role === "ADMIN";
+  const isSearchActive = isRouteActive(pathname, "/search");
   const isAccountActive = isRouteActive(pathname, authHref);
   const isAdminActive = isRouteActive(pathname, "/admin");
 
@@ -99,6 +100,19 @@ export function Navbar() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden items-center gap-2 sm:flex">
+              <Link
+                href="/search"
+                aria-current={isSearchActive ? "page" : undefined}
+                className={[
+                  "inline-flex h-10 items-center justify-center rounded-full border px-4 text-sm font-medium transition",
+                  isSearchActive
+                    ? "border-white/16 bg-white text-slate-950"
+                    : "border-white/10 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white",
+                ].join(" ")}
+              >
+                Search
+              </Link>
+
               {utilityItems.map((item) => (
                 <button
                   key={item.label}

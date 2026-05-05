@@ -3,19 +3,26 @@ import { notFound } from "next/navigation";
 import { FavoriteItemType } from "@prisma/client";
 import { auth } from "@/auth";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ContinuityStrip } from "@/components/ContinuityStrip";
 import { DetailHero } from "@/components/DetailHero";
 import { FavoriteToggle } from "@/components/FavoriteToggle";
 import { Footer } from "@/components/Footer";
 import { InquiryForm } from "@/components/forms/InquiryForm";
+import { GuestRecentlyViewedStrip } from "@/components/GuestRecentlyViewedStrip";
 import { Navbar } from "@/components/Navbar";
+import { RecentlyViewedTracker } from "@/components/RecentlyViewedTracker";
 import { RelatedItems } from "@/components/RelatedItems";
 import {
-  getAllEnergyProducts,
   getEnergyProductBySlug,
 } from "@/lib/db/energy";
 import { isFavorited } from "@/lib/db/favorites";
 import { formatSlug } from "@/lib/formatSlug";
 import { buildPageMetadata } from "@/lib/metadata";
+import {
+  getContextualRecommendationsForItem,
+  getRecentlyViewed,
+  trackRecentlyViewed,
+} from "@/lib/recommendations";
 
 interface EnergyDetailPageProps {
   params: Promise<{
@@ -52,9 +59,8 @@ export default async function EnergyDetailPage({
   params,
 }: EnergyDetailPageProps) {
   const { slug } = await params;
-  const [product, energyProducts, session] = await Promise.all([
+  const [product, session] = await Promise.all([
     getEnergyProductBySlug(slug),
-    getAllEnergyProducts(),
     auth().catch(() => null),
   ]);
 
@@ -69,21 +75,43 @@ export default async function EnergyDetailPage({
         itemSlug: product.slug,
       })
     : false;
-
-  const relatedProducts = energyProducts
+  const [relatedProducts, _tracked, recentlyViewedItems] = await Promise.all([
+    getContextualRecommendationsForItem({
+      userId: session?.user?.id,
+      itemType: "ENERGY_PRODUCT",
+      slug: product.slug,
+      limit: 3,
+    }),
+    session?.user?.id
+      ? trackRecentlyViewed({
+          userId: session.user.id,
+          itemType: "ENERGY_PRODUCT",
+          itemSlug: product.slug,
+        })
+      : Promise.resolve(false),
+    session?.user?.id
+      ? getRecentlyViewed(session.user.id, 5)
+      : Promise.resolve([]),
+  ]);
+  const continuityItems = recentlyViewedItems
     .filter((item) => item.slug !== product.slug)
-    .map((item) => ({
-      title: item.title,
-      description: item.description,
-      href: `/energy/${item.slug}`,
-      image: item.image,
-      eyebrow: "Energy",
-    }));
+    .slice(0, 4);
 
   return (
     <>
       <Navbar />
       <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
+        <RecentlyViewedTracker
+          item={{
+            itemType: "ENERGY_PRODUCT",
+            slug: product.slug,
+            title: product.title,
+            description: product.description,
+            href: `/energy/${product.slug}`,
+            image: product.image,
+            eyebrow: "Energy",
+          }}
+        />
         <DetailHero
           hero={{
             eyebrow: "Energy",
@@ -206,6 +234,27 @@ export default async function EnergyDetailPage({
           </div>
         </section>
 
+        {session?.user?.id ? (
+          continuityItems.length > 0 ? (
+            <ContinuityStrip
+              eyebrow="Recently Viewed"
+              title="Keep the broader energy path in view"
+              description="Your recent product views stay visible so adjacent solar and storage research does not lose momentum."
+              items={continuityItems}
+              actionHref="/account"
+              actionLabel="Open Account"
+              compact
+            />
+          ) : null
+        ) : (
+          <GuestRecentlyViewedStrip
+            currentItem={{
+              itemType: "ENERGY_PRODUCT",
+              slug: product.slug,
+            }}
+          />
+        )}
+
         <section className="section-shell border-t border-white/8 bg-slate-950 py-16 lg:py-20">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
             <div>
@@ -273,11 +322,14 @@ export default async function EnergyDetailPage({
           </div>
         </section>
 
-        <RelatedItems
-          title="Explore related energy products"
-          description="See how additional products expand the resilience, storage, and visibility of the home-energy experience."
-          items={relatedProducts}
-        />
+        {relatedProducts ? (
+          <RelatedItems
+            eyebrow={relatedProducts.eyebrow}
+            title={relatedProducts.title}
+            description={relatedProducts.description}
+            items={relatedProducts.items}
+          />
+        ) : null}
 
         <Footer />
       </main>

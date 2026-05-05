@@ -4,11 +4,19 @@ import { FeatureCard } from "@/components/FeatureCard";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { PageHeader } from "@/components/PageHeader";
+import { CatalogToolbar } from "@/components/search/CatalogToolbar";
 import { SectionGrid } from "@/components/SectionGrid";
 import { ShopCard } from "@/components/ShopCard";
 import { shopFeatures, shopPageHeader } from "@/data/shop";
 import { getAllShopProducts } from "@/lib/db/shop";
 import { buildPageMetadata } from "@/lib/metadata";
+import { pricedCatalogSortOptions } from "@/lib/search/constants";
+import { getShopProductSearchFields } from "@/lib/search/fields";
+import {
+  filterAndSortCollection,
+  parseSearchSort,
+  sanitizeSearchQuery,
+} from "@/lib/search/utils";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = buildPageMetadata({
@@ -25,24 +33,65 @@ export const metadata: Metadata = buildPageMetadata({
   ],
 });
 
-export default async function ShopPage() {
-  const shopProducts = await getAllShopProducts();
+interface ShopPageProps {
+  searchParams: Promise<{
+    q?: string;
+    sort?: string;
+  }>;
+}
+
+export default async function ShopPage({ searchParams }: ShopPageProps) {
+  const params = await searchParams;
+  const query = sanitizeSearchQuery(params.q);
+  const sort = parseSearchSort(params.sort, "featured");
+  const shopProducts = filterAndSortCollection(
+    await getAllShopProducts(),
+    {
+      query,
+      sort,
+    },
+    getShopProductSearchFields,
+  );
 
   return (
     <>
       <Navbar />
       <main className="min-h-screen bg-slate-950 text-white">
         <PageHeader header={shopPageHeader} />
+        <CatalogToolbar
+          action="/shop"
+          defaultSort="featured"
+          description="Search accessories, charging essentials, and lifestyle items by name, use case, or product intent, then sort the grid without leaving the shop flow."
+          itemCount={shopProducts.length}
+          placeholder="Search Wall Connector, bundle, apparel, and more"
+          pluralLabel="shop products"
+          query={query}
+          searchAllHref="/search?type=shop"
+          searchAllLabel="Search all categories"
+          singularLabel="shop product"
+          sort={sort}
+          sortOptions={pricedCatalogSortOptions}
+          suggestionType="shop"
+          title="Refine the shop"
+        />
         {shopProducts.length === 0 ? (
           <section className="section-shell py-16 lg:py-20">
             <CatalogEmptyState
               eyebrow="Shop"
-              title="Shop products are not available yet."
-              description="The shop catalog is empty right now. Add or seed products to restore the full public shopping surface."
-              primaryHref="/admin/products"
-              primaryLabel="Open admin products"
-              secondaryHref="/"
-              secondaryLabel="Return home"
+              title={
+                query
+                  ? "No shop products matched this search."
+                  : "Shop products are not available yet."
+              }
+              description={
+                query
+                  ? "Try a broader term, reset the filters, or search the full catalog for related vehicles and energy products."
+                  : "The shop catalog is empty right now. Add or seed products to restore the full public shopping surface."
+              }
+              primaryHref={query ? "/shop" : "/admin/products"}
+              primaryLabel={query ? "Reset shop search" : "Open admin products"}
+              secondaryHref={query ? "/search" : "/"}
+              secondaryLabel={query ? "Search all products" : "Return home"}
             />
           </section>
         ) : (

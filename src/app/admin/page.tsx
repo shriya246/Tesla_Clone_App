@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { getInsightsSnapshot } from "@/lib/admin-insights";
 import {
   adminProductCategoryConfigs,
   getAdminProductCreateHref,
@@ -32,6 +33,16 @@ const statCards = [
     description: "Saved catalog items tied to signed-in account activity.",
   },
   {
+    key: "savedBuildCount",
+    label: "Saved Builds",
+    description: "Vehicle configuration saves that signal stronger model intent.",
+  },
+  {
+    key: "searchEventCount",
+    label: "Search Events",
+    description: "Tracked catalog searches that now support discovery insight surfaces.",
+  },
+  {
     key: "userCount",
     label: "Users",
     description: "Authenticated customer and admin accounts created so far.",
@@ -39,10 +50,11 @@ const statCards = [
 ] as const;
 
 export default async function AdminOverviewPage() {
-  const [summary, inquiries, products] = await Promise.all([
+  const [summary, inquiries, products, insightSnapshot] = await Promise.all([
     getAdminDashboardSummary(),
     getAllInquiries(),
     getAllAdminProducts(),
+    getInsightsSnapshot(),
   ]);
 
   const recentInquiries = inquiries.slice(0, 4);
@@ -76,6 +88,111 @@ export default async function AdminOverviewPage() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="section-shell border-t border-white/8 py-12 lg:py-16">
+        <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.88fr)]">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
+                  Insight Snapshot
+                </p>
+                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  What is trending right now.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-white/68 sm:text-base">
+                  A quick operational read on the strongest product and discovery signals
+                  before you move into the deeper insight view.
+                </p>
+              </div>
+
+              <Link
+                href="/admin/insights"
+                className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white px-5 text-sm font-medium text-slate-950 transition hover:bg-white/90"
+              >
+                Open insights
+              </Link>
+            </div>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              <article className="rounded-[1.5rem] border border-white/8 bg-black/24 p-5">
+                <p className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
+                  Top viewed product
+                </p>
+                <p className="mt-4 text-xl font-semibold tracking-tight text-white">
+                  {insightSnapshot.topViewedProduct?.title ?? "No data yet"}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-white/62">
+                  {insightSnapshot.topViewedProduct
+                    ? `${insightSnapshot.topViewedProduct.engagement.views} tracked views so far.`
+                    : "Signed-in detail views will surface here once product activity builds."}
+                </p>
+              </article>
+
+              <article className="rounded-[1.5rem] border border-white/8 bg-black/24 p-5">
+                <p className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
+                  Most favorited item
+                </p>
+                <p className="mt-4 text-xl font-semibold tracking-tight text-white">
+                  {insightSnapshot.topFavoritedProduct?.title ?? "No data yet"}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-white/62">
+                  {insightSnapshot.topFavoritedProduct
+                    ? `${insightSnapshot.topFavoritedProduct.engagement.favorites} favorites and ${insightSnapshot.topFavoritedProduct.engagement.inquiries} inquiries so far.`
+                    : "Saved-item demand will show up here once customers begin curating products."}
+                </p>
+              </article>
+
+              <article className="rounded-[1.5rem] border border-white/8 bg-black/24 p-5">
+                <p className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
+                  Top search query
+                </p>
+                <p className="mt-4 text-xl font-semibold tracking-tight text-white">
+                  {insightSnapshot.topSearchQuery?.label ?? "No data yet"}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-white/62">
+                  {insightSnapshot.topSearchQuery
+                    ? `${insightSnapshot.topSearchQuery.count} searches, last seen ${formatDateTime(insightSnapshot.topSearchQuery.lastSearchedAt)}.`
+                    : "Tracked search submissions will appear here once discovery activity starts flowing."}
+                </p>
+              </article>
+            </div>
+          </div>
+
+          <article className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
+            <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
+              Quick Actions
+            </p>
+            <h2 className="mt-4 text-2xl font-semibold tracking-tight text-white">
+              Move from signal to action quickly.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/68">
+              Use the richer insight view to spot what is trending, then jump straight
+              into the product or inquiry workflow that needs attention next.
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <Link
+                href="/admin/insights"
+                className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white text-sm font-medium text-slate-950 transition hover:bg-white/90"
+              >
+                Review insights
+              </Link>
+              <Link
+                href="/admin/products"
+                className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm font-medium text-white/84 transition hover:bg-white/18 hover:text-white"
+              >
+                Review products
+              </Link>
+              <Link
+                href="/admin/inquiries"
+                className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-black/24 text-sm font-medium text-white/72 transition hover:border-white/18 hover:text-white"
+              >
+                Review inquiries
+              </Link>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -199,6 +316,12 @@ export default async function AdminOverviewPage() {
                   className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm font-medium text-white/84 transition hover:bg-white/18 hover:text-white"
                 >
                   Review Inquiries
+                </Link>
+                <Link
+                  href="/admin/insights"
+                  className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-black/24 text-sm font-medium text-white/72 transition hover:border-white/18 hover:text-white"
+                >
+                  Review Insights
                 </Link>
                 {Object.values(adminProductCategoryConfigs).map((config) => (
                   <Link

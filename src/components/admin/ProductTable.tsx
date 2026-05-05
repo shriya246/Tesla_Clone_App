@@ -93,6 +93,20 @@ export function ProductTable({ config, items }: ProductTableProps) {
                     <span className="inline-flex rounded-full border border-white/10 bg-white/10 px-4 py-1 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/78">
                       {item.isRemoteImage ? "Remote image" : "Local asset"}
                     </span>
+                    <span className="inline-flex rounded-full border border-white/10 bg-black/24 px-4 py-1 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/68">
+                      {item.engagement.views} views
+                    </span>
+                    <span className="inline-flex rounded-full border border-white/10 bg-black/24 px-4 py-1 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/68">
+                      {item.engagement.favorites} favorites
+                    </span>
+                    {item.itemType === "VEHICLE" ? (
+                      <span className="inline-flex rounded-full border border-white/10 bg-black/24 px-4 py-1 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/68">
+                        {item.engagement.savedBuilds} builds
+                      </span>
+                    ) : null}
+                    <span className="inline-flex rounded-full border border-white/10 bg-black/24 px-4 py-1 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/68">
+                      {item.engagement.inquiries} inquiries
+                    </span>
                   </div>
 
                   <p className="mt-5 text-sm leading-6 text-white/72 sm:text-base">

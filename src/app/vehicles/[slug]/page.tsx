@@ -4,17 +4,26 @@ import { FavoriteItemType } from "@prisma/client";
 import { auth } from "@/auth";
 import { AppButton } from "@/components/AppButton";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ContinuityStrip } from "@/components/ContinuityStrip";
 import { DetailHero } from "@/components/DetailHero";
 import { DetailSpecs } from "@/components/DetailSpecs";
 import { FavoriteToggle } from "@/components/FavoriteToggle";
 import { Footer } from "@/components/Footer";
 import { InquiryForm } from "@/components/forms/InquiryForm";
+import { GuestRecentlyViewedStrip } from "@/components/GuestRecentlyViewedStrip";
 import { Navbar } from "@/components/Navbar";
+import { RecentlyViewedTracker } from "@/components/RecentlyViewedTracker";
 import { RelatedItems } from "@/components/RelatedItems";
 import { isFavorited } from "@/lib/db/favorites";
-import { getAllVehicles, getVehicleBySlug } from "@/lib/db/vehicles";
+import { getRecentSavedBuildsByUser } from "@/lib/db/saved-builds";
+import { getVehicleBySlug } from "@/lib/db/vehicles";
 import { formatSlug } from "@/lib/formatSlug";
 import { buildPageMetadata } from "@/lib/metadata";
+import {
+  getContextualRecommendationsForItem,
+  getRecentlyViewed,
+  trackRecentlyViewed,
+} from "@/lib/recommendations";
 
 interface VehicleDetailPageProps {
   params: Promise<{
@@ -51,9 +60,8 @@ export default async function VehicleDetailPage({
   params,
 }: VehicleDetailPageProps) {
   const { slug } = await params;
-  const [vehicle, vehicleLineup, session] = await Promise.all([
+  const [vehicle, session] = await Promise.all([
     getVehicleBySlug(slug),
-    getAllVehicles(),
     auth().catch(() => null),
   ]);
 
@@ -68,23 +76,51 @@ export default async function VehicleDetailPage({
         itemSlug: vehicle.slug,
       })
     : false;
-
-  const relatedVehicles = vehicleLineup
+  const [relatedVehicles, _tracked, recentlyViewedItems, recentBuilds] =
+    await Promise.all([
+    getContextualRecommendationsForItem({
+      userId: session?.user?.id,
+      itemType: "VEHICLE",
+      slug: vehicle.slug,
+      limit: 3,
+    }),
+    session?.user?.id
+      ? trackRecentlyViewed({
+          userId: session.user.id,
+          itemType: "VEHICLE",
+          itemSlug: vehicle.slug,
+        })
+      : Promise.resolve(false),
+    session?.user?.id
+      ? getRecentlyViewed(session.user.id, 5)
+      : Promise.resolve([]),
+    session?.user?.id
+      ? getRecentSavedBuildsByUser(session.user.id, 4)
+      : Promise.resolve([]),
+    ]);
+  const continuityItems = recentlyViewedItems
     .filter((item) => item.slug !== vehicle.slug)
-    .slice(0, 3)
-    .map((item) => ({
-      title: item.title,
-      description: item.subtitle,
-      href: `/vehicles/${item.slug}`,
-      image: item.image,
-      eyebrow: "Vehicle",
-      price: item.price,
-    }));
+    .slice(0, 4);
+  const resumeBuild = recentBuilds.find(
+    (savedBuild) => savedBuild.vehicleSlug === vehicle.slug,
+  );
 
   return (
     <>
       <Navbar />
       <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
+        <RecentlyViewedTracker
+          item={{
+            itemType: "VEHICLE",
+            slug: vehicle.slug,
+            title: vehicle.title,
+            description: vehicle.subtitle,
+            href: `/vehicles/${vehicle.slug}`,
+            image: vehicle.image,
+            eyebrow: "Vehicle",
+            price: vehicle.price,
+          }}
+        />
         <DetailHero
           hero={{
             eyebrow: "Vehicle",
@@ -94,6 +130,7 @@ export default async function VehicleDetailPage({
             image: vehicle.image,
             price: vehicle.price,
             primaryButton: vehicle.primaryButton,
+            primaryHref: `/vehicles/${vehicle.slug}/configure`,
             secondaryButton: "Back to Vehicles",
             secondaryHref: "/vehicles",
           }}
@@ -129,7 +166,9 @@ export default async function VehicleDetailPage({
                 {vehicle.subtitle}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <AppButton>{vehicle.primaryButton}</AppButton>
+                <AppButton href={`/vehicles/${vehicle.slug}/configure`}>
+                  {vehicle.primaryButton}
+                </AppButton>
                 <AppButton href="/vehicles" variant="secondary">
                   Compare lineup
                 </AppButton>
@@ -145,6 +184,23 @@ export default async function VehicleDetailPage({
                   redirectPath={`/vehicles/${vehicle.slug}`}
                 />
               </div>
+
+              {resumeBuild ? (
+                <div className="mt-6 rounded-[1.5rem] border border-emerald-400/20 bg-emerald-400/10 px-5 py-4 text-sm leading-6 text-emerald-100">
+                  <p className="font-medium text-white">
+                    Continue Your Build
+                  </p>
+                  <p className="mt-2 text-emerald-100/82">
+                    Reopen your saved {resumeBuild.buildLabel ?? vehicle.title}{" "}
+                    build and keep refining this exact direction.
+                  </p>
+                  <div className="mt-4">
+                    <AppButton href={resumeBuild.configureHref}>
+                      Resume Saved Build
+                    </AppButton>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </section>
@@ -187,6 +243,27 @@ export default async function VehicleDetailPage({
             </div>
           </div>
         </section>
+
+        {session?.user?.id ? (
+          continuityItems.length > 0 ? (
+            <ContinuityStrip
+              eyebrow="Recently Viewed"
+              title="Keep the vehicle research thread intact"
+              description="Your recent product views stay visible here so comparison work across the catalog feels continuous."
+              items={continuityItems}
+              actionHref="/account"
+              actionLabel="Open Account"
+              compact
+            />
+          ) : null
+        ) : (
+          <GuestRecentlyViewedStrip
+            currentItem={{
+              itemType: "VEHICLE",
+              slug: vehicle.slug,
+            }}
+          />
+        )}
 
         <section className="section-shell border-t border-white/8 bg-slate-950 py-16 lg:py-20">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
@@ -254,11 +331,14 @@ export default async function VehicleDetailPage({
           </div>
         </section>
 
-        <RelatedItems
-          title="Explore more vehicles"
-          description="Continue through the lineup with related models built around different priorities, from efficiency to utility."
-          items={relatedVehicles}
-        />
+        {relatedVehicles ? (
+          <RelatedItems
+            eyebrow={relatedVehicles.eyebrow}
+            title={relatedVehicles.title}
+            description={relatedVehicles.description}
+            items={relatedVehicles.items}
+          />
+        ) : null}
 
         <Footer />
       </main>

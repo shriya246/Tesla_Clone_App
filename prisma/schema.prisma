@@ -24,6 +24,13 @@ enum FavoriteItemType {
   SHOP_PRODUCT
 }
 
+enum SearchEventScope {
+  ALL
+  VEHICLE
+  ENERGY
+  SHOP
+}
+
 model Vehicle {
   id              String   @id @default(cuid())
   slug            String   @unique
@@ -131,19 +138,24 @@ model Session {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String?    @unique
-  emailVerified DateTime?
-  name         String?
-  image        String?
-  passwordHash String?
-  role         UserRole   @default(CUSTOMER)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  accounts     Account[]
-  favorites    Favorite[]
-  inquiries    Inquiry[]
-  sessions     Session[]
+  id                     String       @id @default(cuid())
+  email                  String?      @unique
+  emailVerified          DateTime?
+  name                   String?
+  image                  String?
+  passwordHash           String?
+  role                   UserRole     @default(CUSTOMER)
+  buildReminderOptIn     Boolean      @default(true)
+  productUpdatesOptIn    Boolean      @default(false)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  accounts               Account[]
+  favorites              Favorite[]
+  inquiries              Inquiry[]
+  recentlyViewed RecentlyViewed[]
+  savedBuilds            SavedBuild[]
+  searchEvents           SearchEvent[]
+  sessions               Session[]
 
   @@map("users")
 }
@@ -159,6 +171,58 @@ model Favorite {
   @@unique([userId, itemType, itemSlug])
   @@index([itemType, itemSlug])
   @@map("favorites")
+}
+
+model SavedBuild {
+  id              String   @id @default(cuid())
+  userId          String
+  vehicleSlug     String
+  vehicleTitle    String
+  vehicleImage    String
+  vehiclePrice    String
+  buildLabel      String?
+  selectedOptions Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([vehicleSlug])
+  @@map("saved_builds")
+}
+
+model RecentlyViewed {
+  id           String           @id @default(cuid())
+  userId       String
+  itemType     FavoriteItemType
+  itemSlug     String
+  viewCount    Int              @default(1)
+  createdAt    DateTime         @default(now())
+  lastViewedAt DateTime         @default(now())
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemType, itemSlug])
+  @@index([userId, lastViewedAt])
+  @@index([itemType, itemSlug])
+  @@map("recently_viewed")
+}
+
+model SearchEvent {
+  id                String            @id @default(cuid())
+  userId            String?
+  query             String            @db.Text
+  normalizedQuery   String
+  scope             SearchEventScope  @default(ALL)
+  resultCount       Int
+  topResultItemType FavoriteItemType?
+  createdAt         DateTime          @default(now())
+  user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([normalizedQuery, createdAt])
+  @@index([scope, createdAt])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("search_events")
 }
 
 model VerificationToken {

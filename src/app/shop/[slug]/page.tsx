@@ -3,17 +3,25 @@ import { notFound } from "next/navigation";
 import { FavoriteItemType } from "@prisma/client";
 import { auth } from "@/auth";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ContinuityStrip } from "@/components/ContinuityStrip";
 import { DetailHero } from "@/components/DetailHero";
 import { FavoriteToggle } from "@/components/FavoriteToggle";
 import { Footer } from "@/components/Footer";
 import { InquiryForm } from "@/components/forms/InquiryForm";
+import { GuestRecentlyViewedStrip } from "@/components/GuestRecentlyViewedStrip";
 import { Navbar } from "@/components/Navbar";
 import { PriceCallout } from "@/components/PriceCallout";
+import { RecentlyViewedTracker } from "@/components/RecentlyViewedTracker";
 import { RelatedItems } from "@/components/RelatedItems";
 import { isFavorited } from "@/lib/db/favorites";
-import { getAllShopProducts, getShopProductBySlug } from "@/lib/db/shop";
+import { getShopProductBySlug } from "@/lib/db/shop";
 import { formatSlug } from "@/lib/formatSlug";
 import { buildPageMetadata } from "@/lib/metadata";
+import {
+  getContextualRecommendationsForItem,
+  getRecentlyViewed,
+  trackRecentlyViewed,
+} from "@/lib/recommendations";
 
 interface ShopDetailPageProps {
   params: Promise<{
@@ -48,9 +56,8 @@ export async function generateMetadata({
 
 export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
   const { slug } = await params;
-  const [product, shopProducts, session] = await Promise.all([
+  const [product, session] = await Promise.all([
     getShopProductBySlug(slug),
-    getAllShopProducts(),
     auth().catch(() => null),
   ]);
 
@@ -65,23 +72,44 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
         itemSlug: product.slug,
       })
     : false;
-
-  const relatedProducts = shopProducts
+  const [relatedProducts, _tracked, recentlyViewedItems] = await Promise.all([
+    getContextualRecommendationsForItem({
+      userId: session?.user?.id,
+      itemType: "SHOP_PRODUCT",
+      slug: product.slug,
+      limit: 3,
+    }),
+    session?.user?.id
+      ? trackRecentlyViewed({
+          userId: session.user.id,
+          itemType: "SHOP_PRODUCT",
+          itemSlug: product.slug,
+        })
+      : Promise.resolve(false),
+    session?.user?.id
+      ? getRecentlyViewed(session.user.id, 5)
+      : Promise.resolve([]),
+  ]);
+  const continuityItems = recentlyViewedItems
     .filter((item) => item.slug !== product.slug)
-    .slice(0, 3)
-    .map((item) => ({
-      title: item.title,
-      description: item.description,
-      href: `/shop/${item.slug}`,
-      image: item.image,
-      eyebrow: item.badge ?? "Shop",
-      price: item.price,
-    }));
+    .slice(0, 4);
 
   return (
     <>
       <Navbar />
       <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
+        <RecentlyViewedTracker
+          item={{
+            itemType: "SHOP_PRODUCT",
+            slug: product.slug,
+            title: product.title,
+            description: product.description,
+            href: `/shop/${product.slug}`,
+            image: product.image,
+            eyebrow: product.badge ?? "Shop",
+            price: product.price,
+          }}
+        />
         <DetailHero
           hero={{
             eyebrow: "Shop",
@@ -184,6 +212,27 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
           </div>
         </section>
 
+        {session?.user?.id ? (
+          continuityItems.length > 0 ? (
+            <ContinuityStrip
+              eyebrow="Recently Viewed"
+              title="Keep nearby ownership gear close"
+              description="Your recent product views stay attached to the shop flow so accessory research keeps moving without extra backtracking."
+              items={continuityItems}
+              actionHref="/account"
+              actionLabel="Open Account"
+              compact
+            />
+          ) : null
+        ) : (
+          <GuestRecentlyViewedStrip
+            currentItem={{
+              itemType: "SHOP_PRODUCT",
+              slug: product.slug,
+            }}
+          />
+        )}
+
         <section className="section-shell border-t border-white/8 bg-slate-950 py-16 lg:py-20">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
             <div>
@@ -250,11 +299,14 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
           </div>
         </section>
 
-        <RelatedItems
-          title="Explore related shop products"
-          description="Browse more accessories, charging gear, and lifestyle items built to round out the Tesla-inspired ownership journey."
-          items={relatedProducts}
-        />
+        {relatedProducts ? (
+          <RelatedItems
+            eyebrow={relatedProducts.eyebrow}
+            title={relatedProducts.title}
+            description={relatedProducts.description}
+            items={relatedProducts.items}
+          />
+        ) : null}
 
         <Footer />
       </main>

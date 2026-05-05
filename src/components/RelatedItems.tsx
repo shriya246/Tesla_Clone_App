@@ -4,12 +4,14 @@ import { buildMediaBackgroundStyle } from "@/lib/media";
 import type { RelatedItemData } from "@/types";
 
 interface RelatedItemsProps {
+  eyebrow?: string;
   title: string;
   description: string;
   items: RelatedItemData[];
 }
 
 export function RelatedItems({
+  eyebrow = "Related",
   title,
   description,
   items,
@@ -23,7 +25,7 @@ export function RelatedItems({
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
-            Related
+            {eyebrow}
           </p>
           <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
             {title}

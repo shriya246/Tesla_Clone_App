@@ -13,6 +13,10 @@ const tabs = [
     href: "/admin/products",
   },
   {
+    label: "Insights",
+    href: "/admin/insights",
+  },
+  {
     label: "Inquiries",
     href: "/admin/inquiries",
   },

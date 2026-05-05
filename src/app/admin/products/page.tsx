@@ -11,6 +11,18 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminProductsPage() {
   const products = await getAllAdminProducts();
+  const allItems = [
+    ...products.vehicles,
+    ...products.energyProducts,
+    ...products.shopProducts,
+  ];
+  const engagedItemCount = allItems.filter(
+    (item) => item.engagement.totalSignals > 0,
+  ).length;
+  const totalTrackedViews = allItems.reduce(
+    (sum, item) => sum + item.engagement.views,
+    0,
+  );
 
   return (
     <section className="section-shell py-8 pb-16 lg:py-10 lg:pb-20">
@@ -30,6 +42,12 @@ export default async function AdminProductsPage() {
           <div className="mt-6 flex flex-wrap gap-3">
             <div className="inline-flex rounded-full border border-white/10 bg-black/24 px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-white/72">
               {products.totalCount} total products
+            </div>
+            <div className="inline-flex rounded-full border border-white/10 bg-black/24 px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-white/72">
+              {engagedItemCount} with tracked engagement
+            </div>
+            <div className="inline-flex rounded-full border border-white/10 bg-black/24 px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-white/72">
+              {totalTrackedViews} tracked views
             </div>
             <div
               className={`inline-flex rounded-full border px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] ${
@@ -53,6 +71,12 @@ export default async function AdminProductsPage() {
                 New {config.categoryLabel}
               </Link>
             ))}
+            <Link
+              href="/admin/insights"
+              className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white/10 px-5 text-sm font-medium text-white/84 transition hover:bg-white/18 hover:text-white"
+            >
+              Open Insights
+            </Link>
           </div>
         </div>
 

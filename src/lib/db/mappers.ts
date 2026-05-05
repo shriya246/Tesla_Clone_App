@@ -92,6 +92,8 @@ export function mapVehicleRecord(record: VehicleRecord): VehicleData {
     image: normalizeMediaUrl(record.image),
     specs: mapDetailSpecs(record.specs),
     highlights: mapDetailFeatures(record.highlights),
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
   };
 }
 
@@ -108,6 +110,8 @@ export function mapEnergyProductRecord(
     secondaryButton: record.secondaryButton,
     highlights: mapDetailFeatures(record.highlights),
     supportingFeatures: mapDetailFeatures(record.detailFeatures),
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
   };
 }
 
@@ -124,5 +128,7 @@ export function mapShopProductRecord(record: ShopProductRecord): ShopProductData
     badge: record.badge ?? undefined,
     highlights: mapDetailFeatures(record.highlights),
     specs: mapDetailSpecs(record.detailFeatures),
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
   };
 }

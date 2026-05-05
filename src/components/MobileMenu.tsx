@@ -25,6 +25,7 @@ export function MobileMenu({ isOpen, items, onClose }: MobileMenuProps) {
   const authHref = session?.user ? "/account" : "/signin";
   const authLabel = session?.user ? "Account" : "Sign In";
   const isAdmin = session?.user?.role === "ADMIN";
+  const isSearchActive = isRouteActive(pathname, "/search");
   const isAccountActive = isRouteActive(pathname, authHref);
   const isAdminActive = isRouteActive(pathname, "/admin");
 
@@ -96,6 +97,20 @@ export function MobileMenu({ isOpen, items, onClose }: MobileMenuProps) {
 
         <div className="mt-5 border-t border-white/10 pt-5">
           <div className="flex flex-col gap-3">
+            <Link
+              href="/search"
+              onClick={onClose}
+              aria-current={isSearchActive ? "page" : undefined}
+              className={[
+                "inline-flex min-h-[3rem] w-full items-center justify-center rounded-full border px-4 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+                isSearchActive
+                  ? "border-white/16 bg-white text-slate-950"
+                  : "border-white/10 bg-white/10 text-white/84 hover:bg-white/18 hover:text-white",
+              ].join(" ")}
+            >
+              Search Catalog
+            </Link>
+
             <Link
               href={authHref}
               onClick={onClose}

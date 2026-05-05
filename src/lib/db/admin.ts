@@ -3,11 +3,16 @@ import "server-only";
 import { FavoriteItemType, InquiryType } from "@prisma/client";
 
 import {
-  getAdminProductCategoryFromItemType,
-  getAdminProductEditorHref,
-  getProductHref,
-} from "@/lib/admin-products";
-import { isRemoteMediaUrl } from "@/lib/media";
+  getAdminProductCatalogBase,
+  getProductPopularityIndex,
+  groupAdminProductCollection,
+  mergeAdminProductEngagement,
+} from "@/lib/admin-insights";
+import {
+  adminInquiryTypeLabels,
+  adminItemTypeLabels,
+} from "@/lib/admin-labels";
+import { getProductHref } from "@/lib/admin-products";
 import { prisma } from "@/lib/prisma";
 import type {
   AdminDashboardSummary,
@@ -30,119 +35,14 @@ function buildMessagePreview(message: string) {
 
 export async function getAllAdminProducts(): Promise<AdminProductCollection> {
   try {
-    const [vehicles, energyProducts, shopProducts] = await Promise.all([
-      prisma.vehicle.findMany({
-        orderBy: {
-          title: "asc",
-        },
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          subtitle: true,
-          image: true,
-          price: true,
-          updatedAt: true,
-        },
-      }),
-      prisma.energyProduct.findMany({
-        orderBy: {
-          title: "asc",
-        },
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          description: true,
-          image: true,
-          updatedAt: true,
-        },
-      }),
-      prisma.shopProduct.findMany({
-        orderBy: {
-          title: "asc",
-        },
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          description: true,
-          image: true,
-          price: true,
-          updatedAt: true,
-        },
-      }),
+    const [catalogBase, engagementIndex] = await Promise.all([
+      getAdminProductCatalogBase(),
+      getProductPopularityIndex(),
     ]);
 
-    const mappedVehicles: AdminProductListItem[] = vehicles.map((vehicle) => ({
-      id: vehicle.id,
-      category: getAdminProductCategoryFromItemType("VEHICLE"),
-      itemType: "VEHICLE",
-      categoryLabel: "Vehicle",
-      title: vehicle.title,
-      slug: vehicle.slug,
-      href: getProductHref("VEHICLE", vehicle.slug),
-      adminHref: getAdminProductEditorHref(
-        getAdminProductCategoryFromItemType("VEHICLE"),
-        vehicle.id,
-      ),
-      summary: vehicle.subtitle,
-      image: vehicle.image,
-      isRemoteImage: isRemoteMediaUrl(vehicle.image),
-      price: vehicle.price,
-      updatedAt: vehicle.updatedAt,
-    }));
-
-    const mappedEnergyProducts: AdminProductListItem[] = energyProducts.map(
-      (product) => ({
-        id: product.id,
-        category: getAdminProductCategoryFromItemType("ENERGY_PRODUCT"),
-        itemType: "ENERGY_PRODUCT",
-        categoryLabel: "Energy",
-        title: product.title,
-        slug: product.slug,
-        href: getProductHref("ENERGY_PRODUCT", product.slug),
-        adminHref: getAdminProductEditorHref(
-          getAdminProductCategoryFromItemType("ENERGY_PRODUCT"),
-          product.id,
-        ),
-        summary: product.description,
-        image: product.image,
-        isRemoteImage: isRemoteMediaUrl(product.image),
-        updatedAt: product.updatedAt,
-      }),
+    return groupAdminProductCollection(
+      mergeAdminProductEngagement(catalogBase, engagementIndex),
     );
-
-    const mappedShopProducts: AdminProductListItem[] = shopProducts.map(
-      (product) => ({
-        id: product.id,
-        category: getAdminProductCategoryFromItemType("SHOP_PRODUCT"),
-        itemType: "SHOP_PRODUCT",
-        categoryLabel: "Shop",
-        title: product.title,
-        slug: product.slug,
-        href: getProductHref("SHOP_PRODUCT", product.slug),
-        adminHref: getAdminProductEditorHref(
-          getAdminProductCategoryFromItemType("SHOP_PRODUCT"),
-          product.id,
-        ),
-        summary: product.description,
-        image: product.image,
-        isRemoteImage: isRemoteMediaUrl(product.image),
-        price: product.price,
-        updatedAt: product.updatedAt,
-      }),
-    );
-
-    return {
-      vehicles: mappedVehicles,
-      energyProducts: mappedEnergyProducts,
-      shopProducts: mappedShopProducts,
-      totalCount:
-        mappedVehicles.length +
-        mappedEnergyProducts.length +
-        mappedShopProducts.length,
-    };
   } catch {
     return {
       vehicles: [],
@@ -265,6 +165,9 @@ export async function getAdminDashboardSummary(): Promise<AdminDashboardSummary>
       shopCount,
       inquiryCount,
       favoriteCount,
+      savedBuildCount,
+      searchEventCount,
+      recentlyViewedCount,
       userCount,
     ] = await prisma.$transaction([
       prisma.vehicle.count(),
@@ -272,6 +175,9 @@ export async function getAdminDashboardSummary(): Promise<AdminDashboardSummary>
       prisma.shopProduct.count(),
       prisma.inquiry.count(),
       prisma.favorite.count(),
+      prisma.savedBuild.count(),
+      prisma.searchEvent.count(),
+      prisma.recentlyViewed.count(),
       prisma.user.count(),
     ]);
 
@@ -282,6 +188,9 @@ export async function getAdminDashboardSummary(): Promise<AdminDashboardSummary>
       totalProducts: vehicleCount + energyCount + shopCount,
       inquiryCount,
       favoriteCount,
+      savedBuildCount,
+      searchEventCount,
+      recentlyViewedCount,
       userCount,
     };
   } catch {
@@ -292,20 +201,12 @@ export async function getAdminDashboardSummary(): Promise<AdminDashboardSummary>
       totalProducts: 0,
       inquiryCount: 0,
       favoriteCount: 0,
+      savedBuildCount: 0,
+      searchEventCount: 0,
+      recentlyViewedCount: 0,
       userCount: 0,
     };
   }
 }
 
-export const adminInquiryTypeLabels: Record<InquiryType, string> = {
-  VEHICLE_DEMO_REQUEST: "Vehicle Demo",
-  PRODUCT_INQUIRY: "Product Inquiry",
-  ENERGY_CONSULTATION: "Energy Consultation",
-  GENERAL: "General Inquiry",
-};
-
-export const adminItemTypeLabels: Record<FavoriteItemType, string> = {
-  VEHICLE: "Vehicle",
-  ENERGY_PRODUCT: "Energy",
-  SHOP_PRODUCT: "Shop",
-};
+export { adminInquiryTypeLabels, adminItemTypeLabels };
