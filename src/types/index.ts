@@ -284,6 +284,18 @@ export type InquiryTypeValue =
 
 export type InquiryItemTypeValue = "VEHICLE" | "ENERGY_PRODUCT" | "SHOP_PRODUCT";
 
+export type InquiryStatusValue =
+  | "NEW"
+  | "PRIORITIZED"
+  | "FOLLOW_UP"
+  | "CLOSED";
+
+export type InquiryPriorityValue = "LOW" | "NORMAL" | "HIGH" | "URGENT";
+
+export type UserIntentLevelValue = "STANDARD" | "ENGAGED" | "HIGH_INTENT";
+
+export type AutomationRunStatusValue = "SUCCESS" | "PARTIAL_FAILURE" | "FAILED";
+
 export interface InquiryFormFields {
   name: string;
   email: string;
@@ -364,6 +376,8 @@ export interface AdminProductCollection {
 export interface AdminInquiryListItem {
   id: string;
   type: InquiryTypeValue;
+  status: InquiryStatusValue;
+  priority: InquiryPriorityValue;
   itemType?: InquiryItemTypeValue;
   name: string;
   email: string;
@@ -371,6 +385,10 @@ export interface AdminInquiryListItem {
   productSlug?: string | null;
   message: string;
   messagePreview: string;
+  operationalTags: string[];
+  lastAutomatedAt?: Date | null;
+  userIntentLevel?: UserIntentLevelValue | null;
+  recommendationEligible?: boolean;
   href?: string;
   adminHref: string;
   createdAt: Date;
@@ -379,6 +397,12 @@ export interface AdminInquiryListItem {
 }
 
 export interface AdminInquiryDetailItem extends AdminInquiryListItem {}
+
+export interface AdminInquiryWorkflowSummary {
+  prioritizedCount: number;
+  highPriorityCount: number;
+  urgentCount: number;
+}
 
 export interface AdminDashboardSummary {
   vehicleCount: number;
@@ -506,4 +530,22 @@ export interface SavedBuildMutationResponse {
   fieldErrors?: {
     buildLabel?: string[];
   };
+}
+
+export interface AutomationEventLogListItem {
+  id: string;
+  eventType: string;
+  entityType: string;
+  entityId: string;
+  handler: string;
+  status: AutomationRunStatusValue;
+  message: string;
+  createdAt: Date;
+  userEmail?: string | null;
+}
+
+export interface AdminRankingMutationResponse {
+  success: boolean;
+  message: string;
+  fieldErrors?: Record<string, string[] | undefined>;
 }

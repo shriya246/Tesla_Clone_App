@@ -1,7 +1,6 @@
 import "server-only";
 
-import { cache } from "react";
-
+import { cacheRevalidateSeconds, cacheTags, createCachedQuery } from "@/lib/cache";
 import { getAllEnergyProducts } from "@/lib/db/energy";
 import { getAllShopProducts } from "@/lib/db/shop";
 import { getAllVehicles } from "@/lib/db/vehicles";
@@ -27,6 +26,7 @@ function createCatalogItem(
   input: RecommendationDisplayItem & {
     tokens: string[];
     priceValue: number | null;
+    updatedAt?: Date;
   },
 ): RecommendationCatalogItem {
   const priceBandToken = buildPriceBandToken(input.priceValue);
@@ -71,6 +71,7 @@ function mapVehicleToCatalogItem(vehicle: VehicleData): RecommendationCatalogIte
     price: vehicle.price,
     priceValue: parsePriceValue(vehicle.price),
     tokens,
+    updatedAt: vehicle.updatedAt,
   });
 }
 
@@ -86,6 +87,7 @@ function mapEnergyToCatalogItem(
     image: product.image,
     eyebrow: "Energy",
     priceValue: null,
+    updatedAt: product.updatedAt,
     tokens: tokenizeRecommendationText(
       product.title,
       product.description,
@@ -113,6 +115,7 @@ function mapShopToCatalogItem(product: ShopProductData): RecommendationCatalogIt
     eyebrow: product.badge ?? "Shop",
     price: product.price,
     priceValue: parsePriceValue(product.price),
+    updatedAt: product.updatedAt,
     tokens: tokenizeRecommendationText(
       product.title,
       product.description,
@@ -127,7 +130,7 @@ function mapShopToCatalogItem(product: ShopProductData): RecommendationCatalogIt
   });
 }
 
-export const getRecommendationCatalog = cache(async () => {
+export const getRecommendationCatalog = createCachedQuery(async () => {
   const [vehicles, energyProducts, shopProducts] = await Promise.all([
     getAllVehicles(),
     getAllEnergyProducts(),
@@ -139,6 +142,9 @@ export const getRecommendationCatalog = cache(async () => {
     ...energyProducts.map(mapEnergyToCatalogItem),
     ...shopProducts.map(mapShopToCatalogItem),
   ];
+}, ["recommendations:catalog:v2"], {
+  revalidate: cacheRevalidateSeconds.recommendations,
+  tags: [cacheTags.catalog, cacheTags.recommendations],
 });
 
 export async function getRecommendationCatalogMap() {

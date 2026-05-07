@@ -3,9 +3,11 @@ import "server-only";
 import { getUserFavorites } from "@/lib/db/favorites";
 import { getInquiriesByUser } from "@/lib/db/inquiries";
 import { getSavedBuildsByUser } from "@/lib/db/saved-builds";
+import type { RecommendationRankingConfigValues } from "@/lib/recommendations/config";
 
 import type {
   RecommendationCatalogItem,
+  RecommendationSignalMap,
   RecommendationUserProfile,
 } from "@/lib/recommendations/types";
 import {
@@ -15,19 +17,30 @@ import {
 } from "@/lib/recommendations/utils";
 import { getRecentlyViewedSignalsByUser } from "@/lib/recommendations/trackRecentlyViewed";
 
+function createSignalMap(): RecommendationSignalMap {
+  return {
+    categoryWeights: new Map(),
+    tokenWeights: new Map(),
+  };
+}
+
 function addSeedSignals(input: {
   profile: RecommendationUserProfile;
   item: RecommendationCatalogItem;
   weight: number;
   extraTokens?: string[];
+  target: RecommendationSignalMap;
 }) {
+  addWeight(input.target.categoryWeights, input.item.itemType, input.weight);
   addWeight(input.profile.categoryWeights, input.item.itemType, input.weight);
 
   for (const token of input.item.tokens) {
+    addWeight(input.target.tokenWeights, token, input.weight);
     addWeight(input.profile.tokenWeights, token, input.weight);
   }
 
   for (const token of input.extraTokens ?? []) {
+    addWeight(input.target.tokenWeights, token, input.weight * 0.75);
     addWeight(input.profile.tokenWeights, token, input.weight * 0.75);
   }
 
@@ -37,6 +50,7 @@ function addSeedSignals(input: {
 export async function buildUserRecommendationProfile(
   userId: string,
   catalog: RecommendationCatalogItem[],
+  config: RecommendationRankingConfigValues,
 ): Promise<RecommendationUserProfile> {
   const catalogMap = new Map(
     catalog.map((item) => [buildRecommendationKey(item.itemType, item.slug), item]),
@@ -56,6 +70,10 @@ export async function buildUserRecommendationProfile(
     savedBuildKeys: new Set<string>(),
     categoryWeights: new Map(),
     tokenWeights: new Map(),
+    favoriteSignals: createSignalMap(),
+    recentSignals: createSignalMap(),
+    savedBuildSignals: createSignalMap(),
+    inquirySignals: createSignalMap(),
     favoriteSeeds: [],
     recentSeeds: [],
     savedBuildSeeds: [],
@@ -70,7 +88,7 @@ export async function buildUserRecommendationProfile(
       continue;
     }
 
-    const weight = 5;
+    const weight = 1;
     profile.favoriteSeeds.push({
       itemType: item.itemType,
       slug: item.slug,
@@ -81,6 +99,7 @@ export async function buildUserRecommendationProfile(
       profile,
       item,
       weight,
+      target: profile.favoriteSignals,
     });
   }
 
@@ -94,7 +113,10 @@ export async function buildUserRecommendationProfile(
 
     const isFresh =
       Date.now() - recentItem.lastViewedAt.getTime() < 1000 * 60 * 60 * 24 * 7;
-    const weight = 1.75 + Math.min(recentItem.viewCount, 4) * 0.45 + (isFresh ? 0.5 : 0);
+    const weight =
+      1 +
+      Math.min(recentItem.viewCount, 4) * 0.25 +
+      (isFresh ? config.recentViewRecencyBonus : 0);
     profile.recentSeeds.push({
       itemType: item.itemType,
       slug: item.slug,
@@ -105,6 +127,7 @@ export async function buildUserRecommendationProfile(
       profile,
       item,
       weight,
+      target: profile.recentSignals,
     });
   }
 
@@ -116,7 +139,7 @@ export async function buildUserRecommendationProfile(
       continue;
     }
 
-    const weight = 5.5;
+    const weight = 1;
     const extraTokens = extractSavedBuildTokens(build.selectedOptions);
     profile.savedBuildSeeds.push({
       itemType: "VEHICLE",
@@ -130,6 +153,7 @@ export async function buildUserRecommendationProfile(
       item,
       weight,
       extraTokens,
+      target: profile.savedBuildSignals,
     });
   }
 
@@ -145,7 +169,7 @@ export async function buildUserRecommendationProfile(
       continue;
     }
 
-    const weight = 3.75;
+    const weight = 1;
     profile.inquirySeeds.push({
       itemType: item.itemType,
       slug: item.slug,
@@ -155,6 +179,7 @@ export async function buildUserRecommendationProfile(
       profile,
       item,
       weight,
+      target: profile.inquirySignals,
     });
   }
 

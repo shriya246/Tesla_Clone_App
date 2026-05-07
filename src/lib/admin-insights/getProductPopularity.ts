@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cacheRevalidateSeconds, cacheTags, createCachedQuery } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { adminItemTypeLabels } from "@/lib/admin-labels";
 
@@ -67,7 +68,7 @@ function sortProductsByMetric(
     });
 }
 
-export async function getProductPopularityIndex() {
+async function getProductPopularityIndexUncached() {
   try {
     const [viewGroups, favoriteGroups, savedBuildGroups, inquiryGroups] =
       await Promise.all([
@@ -157,7 +158,23 @@ export async function getProductPopularityIndex() {
   }
 }
 
-export async function getProductPopularity(): Promise<AdminProductPopularityData> {
+const getProductPopularityIndexEntries = createCachedQuery(async () => {
+  return [...(await getProductPopularityIndexUncached()).entries()];
+}, ["admin-insights:product-popularity-index:v2"], {
+  revalidate: cacheRevalidateSeconds.adminInsights,
+  tags: [
+    cacheTags.account,
+    cacheTags.adminInsights,
+    cacheTags.catalog,
+    cacheTags.recommendations,
+  ],
+});
+
+export async function getProductPopularityIndex() {
+  return new Map(await getProductPopularityIndexEntries());
+}
+
+async function getProductPopularityUncached(): Promise<AdminProductPopularityData> {
   const [catalogBase, engagementIndex] = await Promise.all([
     getAdminProductCatalogBase(),
     getProductPopularityIndex(),
@@ -243,3 +260,17 @@ export async function getProductPopularity(): Promise<AdminProductPopularityData
     ),
   };
 }
+
+export const getProductPopularity = createCachedQuery(
+  getProductPopularityUncached,
+  ["admin-insights:product-popularity:v2"],
+  {
+    revalidate: cacheRevalidateSeconds.adminInsights,
+    tags: [
+      cacheTags.account,
+      cacheTags.adminInsights,
+      cacheTags.catalog,
+      cacheTags.recommendations,
+    ],
+  },
+);

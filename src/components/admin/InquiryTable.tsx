@@ -1,14 +1,44 @@
 import Link from "next/link";
 
 import {
+  adminInquiryPriorityLabels,
+  adminInquiryStatusLabels,
   adminInquiryTypeLabels,
   adminItemTypeLabels,
+  adminUserIntentLevelLabels,
+  formatOperationalTagLabel,
 } from "@/lib/db/admin";
 import { formatDateTime } from "@/lib/format-date";
 import type { AdminInquiryListItem } from "@/types";
 
 interface InquiryTableProps {
   inquiries: AdminInquiryListItem[];
+}
+
+function getPriorityClasses(priority: AdminInquiryListItem["priority"]) {
+  switch (priority) {
+    case "URGENT":
+      return "border-rose-400/20 bg-rose-400/12 text-rose-100";
+    case "HIGH":
+      return "border-amber-300/20 bg-amber-300/12 text-amber-50";
+    case "LOW":
+      return "border-white/10 bg-black/24 text-white/58";
+    default:
+      return "border-white/10 bg-white/10 text-white/76";
+  }
+}
+
+function getStatusClasses(status: AdminInquiryListItem["status"]) {
+  switch (status) {
+    case "PRIORITIZED":
+      return "border-sky-300/20 bg-sky-300/12 text-sky-100";
+    case "FOLLOW_UP":
+      return "border-emerald-400/20 bg-emerald-400/12 text-emerald-100";
+    case "CLOSED":
+      return "border-white/10 bg-black/24 text-white/58";
+    default:
+      return "border-white/10 bg-white/10 text-white/76";
+  }
 }
 
 export function InquiryTable({ inquiries }: InquiryTableProps) {
@@ -37,6 +67,22 @@ export function InquiryTable({ inquiries }: InquiryTableProps) {
                 <span className="inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em] text-white/76">
                   {adminInquiryTypeLabels[inquiry.type]}
                 </span>
+                <span
+                  className={[
+                    "inline-flex rounded-full border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em]",
+                    getStatusClasses(inquiry.status),
+                  ].join(" ")}
+                >
+                  {adminInquiryStatusLabels[inquiry.status]}
+                </span>
+                <span
+                  className={[
+                    "inline-flex rounded-full border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em]",
+                    getPriorityClasses(inquiry.priority),
+                  ].join(" ")}
+                >
+                  {adminInquiryPriorityLabels[inquiry.priority]}
+                </span>
                 {inquiry.itemType ? (
                   <span className="text-[0.68rem] font-medium uppercase tracking-[0.22em] text-white/42">
                     {adminItemTypeLabels[inquiry.itemType]}
@@ -58,6 +104,12 @@ export function InquiryTable({ inquiries }: InquiryTableProps) {
                 {inquiry.phone ? <span>{inquiry.phone}</span> : null}
                 {inquiry.userEmail ? (
                   <span>Signed in as {inquiry.userEmail}</span>
+                ) : null}
+                {inquiry.userIntentLevel ? (
+                  <span>
+                    {adminUserIntentLevelLabels[inquiry.userIntentLevel]}
+                    {inquiry.recommendationEligible ? " intent" : ""}
+                  </span>
                 ) : null}
               </div>
             </div>
@@ -88,6 +140,19 @@ export function InquiryTable({ inquiries }: InquiryTableProps) {
           <p className="mt-5 text-sm leading-7 text-white/72 sm:text-base">
             {inquiry.messagePreview}
           </p>
+
+          {inquiry.operationalTags.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {inquiry.operationalTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex rounded-full border border-white/10 bg-black/24 px-3 py-1 text-[0.68rem] font-medium uppercase tracking-[0.18em] text-white/58"
+                >
+                  {formatOperationalTagLabel(tag)}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </article>
       ))}
     </div>

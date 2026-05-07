@@ -12,6 +12,10 @@ import { Navbar } from "@/components/Navbar";
 import { RecommendationSection } from "@/components/RecommendationSection";
 import { updateAccountPreferencesAction } from "@/lib/actions/account-preferences";
 import { getAccountDashboardData } from "@/lib/account";
+import {
+  getFeatureFlagActorFromSession,
+  getFeatureFlags,
+} from "@/lib/flags";
 import { buildPageMetadata } from "@/lib/metadata";
 import { buildMediaBackgroundStyle } from "@/lib/media";
 
@@ -38,7 +42,14 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
     redirect("/signin?callbackUrl=%2Faccount");
   }
 
-  const dashboard = await getAccountDashboardData(session.user.id);
+  const flags = getFeatureFlags({
+    actor: getFeatureFlagActorFromSession(session),
+    path: "/account",
+  });
+  const showPremiumAccountModules = flags.accountPremiumModules.enabled;
+  const dashboard = await getAccountDashboardData(session.user.id, {
+    includeRecommendationModules: showPremiumAccountModules,
+  });
 
   async function signOutAction() {
     "use server";
@@ -206,7 +217,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
           />
         ) : null}
 
-        {dashboard.recommendedForYou.length > 0 ? (
+        {showPremiumAccountModules && dashboard.recommendedForYou.length > 0 ? (
           <RecommendationSection
             section={{
               id: "account-recommended-for-you",
@@ -219,7 +230,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
           />
         ) : null}
 
-        {dashboard.basedOnFavorites.length > 0 ? (
+        {showPremiumAccountModules && dashboard.basedOnFavorites.length > 0 ? (
           <RecommendationSection
             section={{
               id: "account-based-on-favorites",

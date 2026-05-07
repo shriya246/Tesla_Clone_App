@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
@@ -6,11 +5,10 @@ import { ZodError } from "zod";
 
 import {
   getAdminProductEditorHref,
-  getProductHref,
 } from "@/lib/admin-products";
 import { requireAdminApiSession } from "@/lib/auth/require-admin-api";
-import { createAdminProduct } from "@/lib/db/admin-products";
 import { isTrustedMutationOrigin } from "@/lib/security/request";
+import { createAdminProductWithAutomation } from "@/lib/services/admin-products";
 import { parseAdminProductPayload } from "@/lib/validations/admin-product";
 import type { AdminProductMutationResponse } from "@/types";
 
@@ -22,17 +20,6 @@ function buildValidationResponse(error: ZodError) {
   };
 
   return NextResponse.json(response, { status: 400 });
-}
-
-function revalidateProductPaths(itemType: "VEHICLE" | "ENERGY_PRODUCT" | "SHOP_PRODUCT", slug: string) {
-  const href = getProductHref(itemType, slug);
-  const listingPath = `/${href.split("/")[1]}`;
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/products");
-  revalidatePath("/account");
-  revalidatePath(listingPath);
-  revalidatePath(href);
 }
 
 export async function POST(request: Request) {
@@ -66,9 +53,20 @@ export async function POST(request: Request) {
 
   try {
     const parsed = parseAdminProductPayload(body);
-    const createdProduct = await createAdminProduct(parsed);
-
-    revalidateProductPaths(createdProduct.itemType, createdProduct.slug);
+    const createdProduct = await createAdminProductWithAutomation({
+      actor: {
+        userId: adminAccess.session.user.id,
+        email: adminAccess.session.user.email,
+        role: adminAccess.session.user.role,
+      },
+      category:
+        parsed.itemType === "VEHICLE"
+          ? "vehicles"
+          : parsed.itemType === "ENERGY_PRODUCT"
+            ? "energy"
+            : "shop",
+      input: parsed,
+    });
 
     const response: AdminProductMutationResponse = {
       success: true,

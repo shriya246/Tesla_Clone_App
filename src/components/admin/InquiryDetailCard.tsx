@@ -1,14 +1,44 @@
 import Link from "next/link";
 
 import {
+  adminInquiryPriorityLabels,
+  adminInquiryStatusLabels,
   adminInquiryTypeLabels,
   adminItemTypeLabels,
+  adminUserIntentLevelLabels,
+  formatOperationalTagLabel,
 } from "@/lib/db/admin";
 import { formatDateTime } from "@/lib/format-date";
 import type { AdminInquiryDetailItem } from "@/types";
 
 interface InquiryDetailCardProps {
   inquiry: AdminInquiryDetailItem;
+}
+
+function getPriorityClasses(priority: AdminInquiryDetailItem["priority"]) {
+  switch (priority) {
+    case "URGENT":
+      return "border-rose-400/20 bg-rose-400/12 text-rose-100";
+    case "HIGH":
+      return "border-amber-300/20 bg-amber-300/12 text-amber-50";
+    case "LOW":
+      return "border-white/10 bg-black/24 text-white/58";
+    default:
+      return "border-white/10 bg-white/10 text-white/76";
+  }
+}
+
+function getStatusClasses(status: AdminInquiryDetailItem["status"]) {
+  switch (status) {
+    case "PRIORITIZED":
+      return "border-sky-300/20 bg-sky-300/12 text-sky-100";
+    case "FOLLOW_UP":
+      return "border-emerald-400/20 bg-emerald-400/12 text-emerald-100";
+    case "CLOSED":
+      return "border-white/10 bg-black/24 text-white/58";
+    default:
+      return "border-white/10 bg-white/10 text-white/76";
+  }
 }
 
 function DetailRow({
@@ -70,6 +100,22 @@ export function InquiryDetailCard({ inquiry }: InquiryDetailCardProps) {
           <span className="inline-flex rounded-full border border-white/10 bg-white/10 px-4 py-1 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/78">
             {adminInquiryTypeLabels[inquiry.type]}
           </span>
+          <span
+            className={[
+              "inline-flex rounded-full border px-4 py-1 text-[0.68rem] font-medium uppercase tracking-[0.24em]",
+              getStatusClasses(inquiry.status),
+            ].join(" ")}
+          >
+            {adminInquiryStatusLabels[inquiry.status]}
+          </span>
+          <span
+            className={[
+              "inline-flex rounded-full border px-4 py-1 text-[0.68rem] font-medium uppercase tracking-[0.24em]",
+              getPriorityClasses(inquiry.priority),
+            ].join(" ")}
+          >
+            {adminInquiryPriorityLabels[inquiry.priority]}
+          </span>
           {inquiry.itemType ? (
             <span className="inline-flex rounded-full border border-white/10 bg-black/24 px-4 py-1 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/62">
               {adminItemTypeLabels[inquiry.itemType]}
@@ -109,9 +155,46 @@ export function InquiryDetailCard({ inquiry }: InquiryDetailCardProps) {
             <DetailRow label="Phone" value={inquiry.phone} />
             <DetailRow label="Product Slug" value={inquiry.productSlug} />
             <DetailRow label="Signed-In User" value={inquiry.userEmail ?? inquiry.userName} />
+            <DetailRow
+              label="Intent Profile"
+              value={
+                inquiry.userIntentLevel
+                  ? `${adminUserIntentLevelLabels[inquiry.userIntentLevel]}${inquiry.recommendationEligible ? " | Recommendation Eligible" : ""}`
+                  : undefined
+              }
+            />
+            <DetailRow
+              label="Last Automated"
+              value={
+                inquiry.lastAutomatedAt
+                  ? formatDateTime(inquiry.lastAutomatedAt)
+                  : undefined
+              }
+            />
           </div>
         </section>
       </div>
+
+      {inquiry.operationalTags.length > 0 ? (
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
+          <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
+            Workflow Tags
+          </p>
+          <h3 className="mt-4 text-2xl font-semibold tracking-tight text-white">
+            Automated routing signals attached to this request.
+          </h3>
+          <div className="mt-6 flex flex-wrap gap-3">
+            {inquiry.operationalTags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex rounded-full border border-white/10 bg-black/24 px-4 py-2 text-[0.68rem] font-medium uppercase tracking-[0.22em] text-white/62"
+              >
+                {formatOperationalTagLabel(tag)}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

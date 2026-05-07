@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
@@ -7,15 +6,14 @@ import { ZodError } from "zod";
 import {
   getAdminProductEditorHref,
   getAdminProductCategoryConfig,
-  getProductHref,
   isAdminProductCategory,
 } from "@/lib/admin-products";
 import { requireAdminApiSession } from "@/lib/auth/require-admin-api";
-import {
-  deleteAdminProduct,
-  updateAdminProduct,
-} from "@/lib/db/admin-products";
 import { isTrustedMutationOrigin } from "@/lib/security/request";
+import {
+  deleteAdminProductWithAutomation,
+  updateAdminProductWithAutomation,
+} from "@/lib/services/admin-products";
 import { parseAdminProductPayload } from "@/lib/validations/admin-product";
 import type { AdminProductMutationResponse } from "@/types";
 
@@ -34,17 +32,6 @@ function buildValidationResponse(error: ZodError) {
   };
 
   return NextResponse.json(response, { status: 400 });
-}
-
-function revalidateProductPaths(itemType: "VEHICLE" | "ENERGY_PRODUCT" | "SHOP_PRODUCT", slug: string) {
-  const href = getProductHref(itemType, slug);
-  const listingPath = `/${href.split("/")[1]}`;
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/products");
-  revalidatePath("/account");
-  revalidatePath(listingPath);
-  revalidatePath(href);
 }
 
 export async function PATCH(
@@ -103,9 +90,16 @@ export async function PATCH(
       return NextResponse.json(response, { status: 400 });
     }
 
-    const updatedProduct = await updateAdminProduct(category, id, parsed);
-
-    revalidateProductPaths(updatedProduct.itemType, updatedProduct.slug);
+    const updatedProduct = await updateAdminProductWithAutomation({
+      actor: {
+        userId: adminAccess.session.user.id,
+        email: adminAccess.session.user.email,
+        role: adminAccess.session.user.role,
+      },
+      category,
+      id,
+      input: parsed,
+    });
 
     const response: AdminProductMutationResponse = {
       success: true,
@@ -193,9 +187,15 @@ export async function DELETE(
   }
 
   try {
-    const deletedProduct = await deleteAdminProduct(category, id);
-
-    revalidateProductPaths(deletedProduct.itemType, deletedProduct.slug);
+    const deletedProduct = await deleteAdminProductWithAutomation({
+      actor: {
+        userId: adminAccess.session.user.id,
+        email: adminAccess.session.user.email,
+        role: adminAccess.session.user.role,
+      },
+      category,
+      id,
+    });
 
     const response: AdminProductMutationResponse = {
       success: true,

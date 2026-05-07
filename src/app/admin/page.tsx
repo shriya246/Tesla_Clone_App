@@ -1,20 +1,62 @@
 import Link from "next/link";
 
+import { automationRunStatusLabels } from "@/lib/admin-labels";
 import { getInsightsSnapshot } from "@/lib/admin-insights";
 import {
   adminProductCategoryConfigs,
   getAdminProductCreateHref,
 } from "@/lib/admin-products";
 import {
+  adminInquiryPriorityLabels,
+  adminInquiryStatusLabels,
   adminInquiryTypeLabels,
   adminItemTypeLabels,
   getAllAdminProducts,
   getAdminDashboardSummary,
   getAllInquiries,
+  getInquiryWorkflowSummary,
 } from "@/lib/db/admin";
+import { getRecentAutomationEventLogs } from "@/lib/db/automation-event-logs";
 import { formatDateTime } from "@/lib/format-date";
 
 export const dynamic = "force-dynamic";
+
+function getPriorityClasses(priority: "LOW" | "NORMAL" | "HIGH" | "URGENT") {
+  switch (priority) {
+    case "URGENT":
+      return "border-rose-400/20 bg-rose-400/12 text-rose-100";
+    case "HIGH":
+      return "border-amber-300/20 bg-amber-300/12 text-amber-50";
+    case "LOW":
+      return "border-white/10 bg-black/24 text-white/58";
+    default:
+      return "border-white/10 bg-white/10 text-white/76";
+  }
+}
+
+function getStatusClasses(status: "NEW" | "PRIORITIZED" | "FOLLOW_UP" | "CLOSED") {
+  switch (status) {
+    case "PRIORITIZED":
+      return "border-sky-300/20 bg-sky-300/12 text-sky-100";
+    case "FOLLOW_UP":
+      return "border-emerald-400/20 bg-emerald-400/12 text-emerald-100";
+    case "CLOSED":
+      return "border-white/10 bg-black/24 text-white/58";
+    default:
+      return "border-white/10 bg-white/10 text-white/76";
+  }
+}
+
+function getAutomationStatusClasses(status: "SUCCESS" | "PARTIAL_FAILURE" | "FAILED") {
+  switch (status) {
+    case "FAILED":
+      return "border-rose-400/20 bg-rose-400/12 text-rose-100";
+    case "PARTIAL_FAILURE":
+      return "border-amber-300/20 bg-amber-300/12 text-amber-50";
+    default:
+      return "border-emerald-400/20 bg-emerald-400/12 text-emerald-100";
+  }
+}
 
 const statCards = [
   {
@@ -50,11 +92,20 @@ const statCards = [
 ] as const;
 
 export default async function AdminOverviewPage() {
-  const [summary, inquiries, products, insightSnapshot] = await Promise.all([
+  const [
+    summary,
+    inquiries,
+    products,
+    insightSnapshot,
+    workflowSummary,
+    recentAutomationEvents,
+  ] = await Promise.all([
     getAdminDashboardSummary(),
     getAllInquiries(),
     getAllAdminProducts(),
     getInsightsSnapshot(),
+    getInquiryWorkflowSummary(),
+    getRecentAutomationEventLogs(),
   ]);
 
   const recentInquiries = inquiries.slice(0, 4);
@@ -161,38 +212,96 @@ export default async function AdminOverviewPage() {
             </div>
           </div>
 
-          <article className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
-            <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
-              Quick Actions
-            </p>
-            <h2 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-              Move from signal to action quickly.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-white/68">
-              Use the richer insight view to spot what is trending, then jump straight
-              into the product or inquiry workflow that needs attention next.
-            </p>
-            <div className="mt-6 flex flex-col gap-3">
-              <Link
-                href="/admin/insights"
-                className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white text-sm font-medium text-slate-950 transition hover:bg-white/90"
-              >
-                Review insights
-              </Link>
-              <Link
-                href="/admin/products"
-                className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm font-medium text-white/84 transition hover:bg-white/18 hover:text-white"
-              >
-                Review products
-              </Link>
-              <Link
-                href="/admin/inquiries"
-                className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-black/24 text-sm font-medium text-white/72 transition hover:border-white/18 hover:text-white"
-              >
-                Review inquiries
-              </Link>
-            </div>
-          </article>
+          <div className="grid gap-6">
+            <article className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
+              <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
+                Quick Actions
+              </p>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-white">
+                Move from signal to action quickly.
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-white/68">
+                Use the richer insight view to spot what is trending, then jump straight
+                into the product or inquiry workflow that needs attention next.
+              </p>
+              <div className="mt-6 flex flex-col gap-3">
+                <Link
+                  href="/admin/insights"
+                  className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white text-sm font-medium text-slate-950 transition hover:bg-white/90"
+                >
+                  Review insights
+                </Link>
+                <Link
+                  href="/admin/products"
+                  className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm font-medium text-white/84 transition hover:bg-white/18 hover:text-white"
+                >
+                  Review products
+                </Link>
+                <Link
+                  href="/admin/inquiries"
+                  className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-white/10 bg-black/24 text-sm font-medium text-white/72 transition hover:border-white/18 hover:text-white"
+                >
+                  Review inquiries
+                </Link>
+              </div>
+            </article>
+
+            <article className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-halo backdrop-blur-sm sm:p-8">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/42">
+                    Automation Activity
+                  </p>
+                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-white">
+                    Recent workflow outcomes.
+                  </h2>
+                </div>
+                <div className="rounded-[1.25rem] border border-white/10 bg-black/24 px-4 py-3 text-sm text-white/68">
+                  {workflowSummary.prioritizedCount} prioritized inquiries
+                </div>
+              </div>
+
+              {recentAutomationEvents.length === 0 ? (
+                <div className="mt-6 rounded-[1.5rem] border border-dashed border-white/12 bg-black/24 p-5 text-sm leading-6 text-white/62">
+                  Automation logs will appear here as soon as inquiries, saved builds,
+                  favorites, or admin product changes trigger internal workflows.
+                </div>
+              ) : (
+                <div className="mt-6 space-y-3">
+                  {recentAutomationEvents.map((event) => (
+                    <article
+                      key={event.id}
+                      className="rounded-[1.5rem] border border-white/8 bg-black/24 p-4"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span
+                              className={[
+                                "inline-flex rounded-full border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em]",
+                                getAutomationStatusClasses(event.status),
+                              ].join(" ")}
+                            >
+                              {automationRunStatusLabels[event.status]}
+                            </span>
+                            <span className="text-[0.68rem] font-medium uppercase tracking-[0.22em] text-white/42">
+                              {event.eventType}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-sm leading-6 text-white/72">
+                            {event.message}
+                          </p>
+                        </div>
+                        <p className="text-xs uppercase tracking-[0.22em] text-white/38">
+                          {formatDateTime(event.createdAt)}
+                        </p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </article>
+          </div>
         </div>
       </section>
 
@@ -235,9 +344,27 @@ export default async function AdminOverviewPage() {
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
-                          {adminInquiryTypeLabels[inquiry.type]}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
+                            {adminInquiryTypeLabels[inquiry.type]}
+                          </span>
+                          <span
+                            className={[
+                              "inline-flex rounded-full border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em]",
+                              getStatusClasses(inquiry.status),
+                            ].join(" ")}
+                          >
+                            {adminInquiryStatusLabels[inquiry.status]}
+                          </span>
+                          <span
+                            className={[
+                              "inline-flex rounded-full border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em]",
+                              getPriorityClasses(inquiry.priority),
+                            ].join(" ")}
+                          >
+                            {adminInquiryPriorityLabels[inquiry.priority]}
+                          </span>
+                        </div>
                         <h3 className="mt-3 text-xl font-semibold tracking-tight text-white">
                           {inquiry.name}
                         </h3>
@@ -442,6 +569,24 @@ export default async function AdminOverviewPage() {
                     <p className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
                       {adminInquiryTypeLabels[inquiry.type]}
                     </p>
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      <span
+                        className={[
+                          "inline-flex rounded-full border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em]",
+                          getStatusClasses(inquiry.status),
+                        ].join(" ")}
+                      >
+                        {adminInquiryStatusLabels[inquiry.status]}
+                      </span>
+                      <span
+                        className={[
+                          "inline-flex rounded-full border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em]",
+                          getPriorityClasses(inquiry.priority),
+                        ].join(" ")}
+                      >
+                        {adminInquiryPriorityLabels[inquiry.priority]}
+                      </span>
+                    </div>
                     <h3 className="mt-3 text-xl font-semibold tracking-tight text-white">
                       {inquiry.name}
                     </h3>

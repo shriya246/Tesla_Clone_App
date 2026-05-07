@@ -108,6 +108,34 @@ export async function getSavedBuildById(input: {
   }
 }
 
+export async function getSavedBuildByIdForIntegration(
+  buildId: string,
+): Promise<SavedBuildData | null> {
+  try {
+    const build = await prisma.savedBuild.findUnique({
+      where: {
+        id: buildId,
+      },
+    });
+
+    if (!build) {
+      return null;
+    }
+
+    return mapSavedBuildRecord(build);
+  } catch {
+    return null;
+  }
+}
+
+export function countSavedBuildsByUser(userId: string) {
+  return prisma.savedBuild.count({
+    where: {
+      userId,
+    },
+  });
+}
+
 export async function createSavedBuild(input: {
   userId: string;
   vehicleSlug: string;

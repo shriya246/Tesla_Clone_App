@@ -1,8 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import { auth } from "@/auth";
+import { cacheTags, revalidateCachePaths, revalidateCacheTags } from "@/lib/cache";
 import { updateUserContinuityPreferences } from "@/lib/db/users";
 
 import type { AccountPreferencesActionState } from "@/lib/account/types";
@@ -31,7 +30,8 @@ export async function updateAccountPreferencesAction(
       productUpdatesOptIn: isChecked(formData, "productUpdatesOptIn"),
     });
 
-    revalidatePath("/account");
+    revalidateCachePaths(["/account"]);
+    revalidateCacheTags([cacheTags.account]);
 
     return {
       success: true,

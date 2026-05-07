@@ -1,12 +1,11 @@
 import "server-only";
 
-import { cache } from "react";
-
 import { energyProducts } from "@/data/energy";
+import { cacheRevalidateSeconds, cacheTags, createCachedQuery } from "@/lib/cache";
 import { mapEnergyProductRecord } from "@/lib/db/mappers";
 import { prisma } from "@/lib/prisma";
 
-export const getAllEnergyProducts = cache(async () => {
+export const getAllEnergyProducts = createCachedQuery(async () => {
   try {
     const products = await prisma.energyProduct.findMany({
       orderBy: {
@@ -18,9 +17,12 @@ export const getAllEnergyProducts = cache(async () => {
   } catch {
     return energyProducts;
   }
+}, ["energy-products:list:v2"], {
+  revalidate: cacheRevalidateSeconds.catalog,
+  tags: [cacheTags.catalog, cacheTags.energyProducts],
 });
 
-export const getEnergyProductBySlug = cache(async (slug: string) => {
+export const getEnergyProductBySlug = createCachedQuery(async (slug: string) => {
   try {
     const product = await prisma.energyProduct.findUnique({
       where: {
@@ -32,4 +34,7 @@ export const getEnergyProductBySlug = cache(async (slug: string) => {
   } catch {
     return energyProducts.find((product) => product.slug === slug) ?? null;
   }
+}, ["energy-products:detail:v2"], {
+  revalidate: cacheRevalidateSeconds.catalog,
+  tags: [cacheTags.catalog, cacheTags.energyProducts],
 });

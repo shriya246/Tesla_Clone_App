@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { UserIntentLevel } from "@prisma/client";
 
 export function getUserById(id: string) {
   return prisma.user.findUnique({
@@ -24,6 +25,45 @@ export function getUserContinuityPreferencesById(id: string) {
     select: {
       buildReminderOptIn: true,
       productUpdatesOptIn: true,
+    },
+  });
+}
+
+export function getUserWorkflowProfileById(id: string) {
+  return prisma.user.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      intentLevel: true,
+      recommendationEligible: true,
+      intentQualifiedAt: true,
+    },
+  });
+}
+
+export function updateUserWorkflowProfile(input: {
+  id: string;
+  intentLevel: UserIntentLevel;
+  recommendationEligible: boolean;
+  intentQualifiedAt?: Date | null;
+}) {
+  return prisma.user.update({
+    where: {
+      id: input.id,
+    },
+    data: {
+      intentLevel: input.intentLevel,
+      recommendationEligible: input.recommendationEligible,
+      intentQualifiedAt:
+        typeof input.intentQualifiedAt === "undefined"
+          ? undefined
+          : input.intentQualifiedAt,
+    },
+    select: {
+      intentLevel: true,
+      recommendationEligible: true,
+      intentQualifiedAt: true,
     },
   });
 }

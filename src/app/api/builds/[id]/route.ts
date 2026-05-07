@@ -1,7 +1,7 @@
-import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
+import { cacheTags, revalidateCachePaths, revalidateCacheTags } from "@/lib/cache";
 import { deleteSavedBuild } from "@/lib/db/saved-builds";
 import type { SavedBuildMutationResponse } from "@/types";
 
@@ -43,9 +43,12 @@ export async function DELETE(
     return NextResponse.json(response, { status: 404 });
   }
 
-  revalidatePath("/account");
-  revalidatePath("/account/builds");
-  revalidatePath(`/account/builds/${id}`);
+  revalidateCachePaths(["/account", "/account/builds", `/account/builds/${id}`]);
+  revalidateCacheTags([
+    cacheTags.account,
+    cacheTags.adminInsights,
+    cacheTags.recommendations,
+  ]);
 
   const response: SavedBuildMutationResponse = {
     success: true,

@@ -35,12 +35,21 @@ const serverEnvSchema = publicEnvSchema.extend({
   AUTH_GOOGLE_ID: optionalTrimmedString,
   AUTH_GOOGLE_SECRET: optionalTrimmedString,
   ADMIN_EMAILS: optionalTrimmedString,
+  FEATURE_FLAGS_DEFAULT_MODE: z.enum(["stable", "preview"]).default("stable"),
+  FEATURE_FLAG_PROVIDER: z
+    .enum(["internal", "posthog", "launchdarkly"])
+    .default("internal"),
+  FEATURE_FLAG_BETA_EMAILS: optionalTrimmedString,
+  FEATURE_FLAG_BETA_USER_IDS: optionalTrimmedString,
   CLOUDINARY_CLOUD_NAME: optionalTrimmedString,
   CLOUDINARY_API_KEY: optionalTrimmedString,
   CLOUDINARY_API_SECRET: optionalTrimmedString,
   RESEND_API_KEY: optionalTrimmedString,
   EMAIL_FROM: optionalTrimmedString,
   ADMIN_NOTIFICATION_EMAIL: optionalEmailString,
+  WEBHOOK_ENDPOINTS_JSON: optionalTrimmedString,
+  PARTNER_API_KEYS: optionalTrimmedString,
+  JOB_RUNNER_SECRET: optionalTrimmedString,
 });
 
 const rawEnv = serverEnvSchema.parse({
@@ -51,12 +60,19 @@ const rawEnv = serverEnvSchema.parse({
   AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
   AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
   ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+  FEATURE_FLAGS_DEFAULT_MODE: process.env.FEATURE_FLAGS_DEFAULT_MODE,
+  FEATURE_FLAG_PROVIDER: process.env.FEATURE_FLAG_PROVIDER,
+  FEATURE_FLAG_BETA_EMAILS: process.env.FEATURE_FLAG_BETA_EMAILS,
+  FEATURE_FLAG_BETA_USER_IDS: process.env.FEATURE_FLAG_BETA_USER_IDS,
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   EMAIL_FROM: process.env.EMAIL_FROM,
   ADMIN_NOTIFICATION_EMAIL: process.env.ADMIN_NOTIFICATION_EMAIL,
+  WEBHOOK_ENDPOINTS_JSON: process.env.WEBHOOK_ENDPOINTS_JSON,
+  PARTNER_API_KEYS: process.env.PARTNER_API_KEYS,
+  JOB_RUNNER_SECRET: process.env.JOB_RUNNER_SECRET,
   NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
 });
 
@@ -86,6 +102,13 @@ function isValidEmailAddress(value: string) {
   return z.email().safeParse(value).success;
 }
 
+function parseCommaSeparatedList(value?: string) {
+  return (value ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
 function getEmailFromAddressValue(value?: string) {
   if (!value) {
     return undefined;
@@ -108,14 +131,25 @@ export function requireServerEnv(name: ServerEnvName) {
 }
 
 export function getAdminEmailList() {
-  return (env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((email) => email.trim())
-    .filter(isValidEmailAddress);
+  return parseCommaSeparatedList(env.ADMIN_EMAILS).filter(isValidEmailAddress);
 }
 
 export function getAdminNotificationEmail() {
   return env.ADMIN_NOTIFICATION_EMAIL ?? getAdminEmailList()[0];
+}
+
+export function getFeatureFlagBetaEmailList() {
+  return parseCommaSeparatedList(env.FEATURE_FLAG_BETA_EMAILS)
+    .filter(isValidEmailAddress)
+    .map((email) => email.toLowerCase());
+}
+
+export function getFeatureFlagBetaUserIdList() {
+  return parseCommaSeparatedList(env.FEATURE_FLAG_BETA_USER_IDS);
+}
+
+export function getPartnerApiKeyList() {
+  return parseCommaSeparatedList(env.PARTNER_API_KEYS);
 }
 
 export const hasDatabaseUrl = Boolean(env.DATABASE_URL);
@@ -134,6 +168,9 @@ export const hasTransactionalEmailEnv = Boolean(
 );
 export const hasSentryEnv = Boolean(env.NEXT_PUBLIC_SENTRY_DSN);
 export const hasEmailFromAddress = Boolean(getEmailFromAddressValue(env.EMAIL_FROM));
+export const hasWebhookEndpointConfig = Boolean(env.WEBHOOK_ENDPOINTS_JSON);
+export const hasPartnerApiKeys = getPartnerApiKeyList().length > 0;
+export const hasJobRunnerSecret = Boolean(env.JOB_RUNNER_SECRET);
 
 function buildEnvIssue(
   group: EnvGroup,

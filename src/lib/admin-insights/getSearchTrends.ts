@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cacheRevalidateSeconds, cacheTags, createCachedQuery } from "@/lib/cache";
 import { adminItemTypeLabels, adminSearchScopeLabels } from "@/lib/admin-labels";
 import { prisma } from "@/lib/prisma";
 
@@ -11,7 +12,7 @@ import {
 } from "@/lib/admin-insights/utils";
 import type { AdminSearchTrendsData, SearchEventScopeValue } from "@/types";
 
-export async function getSearchTrends(): Promise<AdminSearchTrendsData> {
+async function getSearchTrendsUncached(): Promise<AdminSearchTrendsData> {
   try {
     const recentWindowStart = new Date();
     recentWindowStart.setDate(recentWindowStart.getDate() - 29);
@@ -189,3 +190,12 @@ export async function getSearchTrends(): Promise<AdminSearchTrendsData> {
     };
   }
 }
+
+export const getSearchTrends = createCachedQuery(
+  getSearchTrendsUncached,
+  ["admin-insights:search-trends:v2"],
+  {
+    revalidate: cacheRevalidateSeconds.adminInsights,
+    tags: [cacheTags.adminInsights, cacheTags.search],
+  },
+);

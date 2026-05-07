@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getRecommendationCatalog } from "@/lib/recommendations/catalog";
+import { getRankingConfig } from "@/lib/recommendations/getRankingConfig";
 import { getRecommendedForUser } from "@/lib/recommendations/getRecommendedForUser";
 import { getRecommendedItems } from "@/lib/recommendations/getRecommendedItems";
 import { buildUserRecommendationProfile } from "@/lib/recommendations/signals";
@@ -11,7 +12,8 @@ export async function getPersonalizedHomepageData(
   userId: string,
 ): Promise<RecommendationSectionData[]> {
   const catalog = await getRecommendationCatalog();
-  const profile = await buildUserRecommendationProfile(userId, catalog);
+  const config = await getRankingConfig();
+  const profile = await buildUserRecommendationProfile(userId, catalog, config);
 
   if (!profile.hasSignals) {
     return [];

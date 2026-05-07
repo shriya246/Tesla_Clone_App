@@ -59,7 +59,7 @@ function buildSearchTokens(query: string) {
   );
 }
 
-function scoreSearchableFields(fields: SearchableFields, query: string) {
+export function scoreSearchableFields(fields: SearchableFields, query: string) {
   const normalizedQuery = normalizeSearchText(query);
 
   if (!normalizedQuery) {

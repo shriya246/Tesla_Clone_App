@@ -25,6 +25,70 @@ export class AdminProductNotFoundError extends Error {
   }
 }
 
+export async function getAdminProductReferenceBySlug(
+  itemType: PersistedAdminProductInput["itemType"],
+  slug: string,
+) {
+  switch (itemType) {
+    case "VEHICLE":
+      return prisma.vehicle.findUnique({
+        where: { slug },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+    case "ENERGY_PRODUCT":
+      return prisma.energyProduct.findUnique({
+        where: { slug },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+    case "SHOP_PRODUCT":
+      return prisma.shopProduct.findUnique({
+        where: { slug },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+  }
+}
+
+export async function getAdminProductReference(
+  category: AdminProductCategoryConfig["category"],
+  id: string,
+) {
+  switch (category) {
+    case "vehicles":
+      return prisma.vehicle.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+    case "energy":
+      return prisma.energyProduct.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+    case "shop":
+      return prisma.shopProduct.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+  }
+}
+
 function getVehicleFormData(record: {
   title: string;
   slug: string;

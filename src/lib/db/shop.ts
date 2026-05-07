@@ -1,12 +1,11 @@
 import "server-only";
 
-import { cache } from "react";
-
 import { shopProducts } from "@/data/shop";
+import { cacheRevalidateSeconds, cacheTags, createCachedQuery } from "@/lib/cache";
 import { mapShopProductRecord } from "@/lib/db/mappers";
 import { prisma } from "@/lib/prisma";
 
-export const getAllShopProducts = cache(async () => {
+export const getAllShopProducts = createCachedQuery(async () => {
   try {
     const products = await prisma.shopProduct.findMany({
       orderBy: {
@@ -18,9 +17,12 @@ export const getAllShopProducts = cache(async () => {
   } catch {
     return shopProducts;
   }
+}, ["shop-products:list:v2"], {
+  revalidate: cacheRevalidateSeconds.catalog,
+  tags: [cacheTags.catalog, cacheTags.shopProducts],
 });
 
-export const getShopProductBySlug = cache(async (slug: string) => {
+export const getShopProductBySlug = createCachedQuery(async (slug: string) => {
   try {
     const product = await prisma.shopProduct.findUnique({
       where: {
@@ -32,4 +34,7 @@ export const getShopProductBySlug = cache(async (slug: string) => {
   } catch {
     return shopProducts.find((product) => product.slug === slug) ?? null;
   }
+}, ["shop-products:detail:v2"], {
+  revalidate: cacheRevalidateSeconds.catalog,
+  tags: [cacheTags.catalog, cacheTags.shopProducts],
 });

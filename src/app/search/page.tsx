@@ -9,6 +9,12 @@ import { SearchInput } from "@/components/search/SearchInput";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { SearchSortSelect } from "@/components/search/SearchSortSelect";
 import {
+  getFeatureFlagActorFromSession,
+  getFeatureFlags,
+} from "@/lib/flags";
+import { buildPageMetadata } from "@/lib/metadata";
+import { logSearchEvent } from "@/lib/search/logSearchEvent";
+import {
   globalSearchSortOptions,
   searchTypeOptions,
 } from "@/lib/search/constants";
@@ -18,8 +24,6 @@ import {
   parseSearchType,
   sanitizeSearchQuery,
 } from "@/lib/search/utils";
-import { logSearchEvent } from "@/lib/search/logSearchEvent";
-import { buildPageMetadata } from "@/lib/metadata";
 import type { SearchFilterType, SearchSortOption } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -68,14 +72,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const query = sanitizeSearchQuery(params.q);
   const activeType = parseSearchType(params.type);
   const activeSort = parseSearchSort(params.sort, "relevance");
-  const [searchState, session] = await Promise.all([
-    searchProducts({
-      query,
-      type: activeType,
-      sort: activeSort,
-    }),
-    auth().catch(() => null),
-  ]);
+  const session = await auth().catch(() => null);
+  const searchState = await searchProducts({
+    query,
+    type: activeType,
+    sort: activeSort,
+    userId: session?.user?.id,
+  });
+  const flags = getFeatureFlags({
+    actor: getFeatureFlagActorFromSession(session),
+    path: "/search",
+  });
 
   if (query.length >= 2) {
     await logSearchEvent({
@@ -92,15 +99,52 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     searchState.counts.vehicle +
     searchState.counts.energy +
     searchState.counts.shop;
-  const hasActiveFilters = query.length > 0 || activeType !== "all" || activeSort !== "relevance";
+  const hasActiveFilters =
+    query.length > 0 || activeType !== "all" || activeSort !== "relevance";
   const resultTitle = query
-    ? `Results for “${query}”`
+    ? `Results for "${query}"`
     : "Browse the Tesla-inspired catalog.";
   const resultDescription = query
     ? `${searchState.totalCount} result${
         searchState.totalCount === 1 ? "" : "s"
-      } ${activeType === "all" ? "matched across the catalog." : "matched in this category."}`
+      } ${
+        activeType === "all"
+          ? "matched across the catalog."
+          : "matched in this category."
+      }`
     : `${totalAcrossTypes} products are searchable across Vehicles, Energy, and Shop.`;
+  const showEnhancedSearchDiscovery =
+    flags.searchDiscoveryExperience.value === "enhanced";
+  const discoverySummaryCards = [
+    {
+      label: "Active Results",
+      value: searchState.totalCount,
+      description: query
+        ? "Items currently visible in the active scope and sort."
+        : "Products visible in the current search scope before filtering.",
+    },
+    {
+      label: "Vehicle Matches",
+      value: searchState.counts.vehicle,
+      description: query
+        ? "Vehicle catalog matches for this query."
+        : "Vehicle entries available to search.",
+    },
+    {
+      label: "Energy Matches",
+      value: searchState.counts.energy,
+      description: query
+        ? "Home energy matches for this query."
+        : "Energy products available to search.",
+    },
+    {
+      label: "Shop Matches",
+      value: searchState.counts.shop,
+      description: query
+        ? "Shop catalog matches for this query."
+        : "Accessories and lifestyle items available to search.",
+    },
+  ];
 
   return (
     <>
@@ -127,6 +171,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               <SearchInput
                 action="/search"
                 autoFocus
+                enableSuggestions={showEnhancedSearchDiscovery}
                 hiddenParams={{
                   sort: activeSort !== "relevance" ? activeSort : undefined,
                   type: activeType !== "all" ? activeType : undefined,
@@ -205,6 +250,27 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 ) : null}
               </div>
             </div>
+
+            {showEnhancedSearchDiscovery ? (
+              <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {discoverySummaryCards.map((card) => (
+                  <article
+                    key={card.label}
+                    className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5 shadow-halo backdrop-blur-sm"
+                  >
+                    <p className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
+                      {card.label}
+                    </p>
+                    <p className="mt-4 text-3xl font-semibold tracking-tight text-white">
+                      {card.value}
+                    </p>
+                    <p className="mt-3 text-sm leading-6 text-white/62">
+                      {card.description}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            ) : null}
 
             {searchState.results.length === 0 ? (
               <div className="mt-10">

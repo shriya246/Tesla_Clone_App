@@ -1,10 +1,11 @@
 import "server-only";
 
+import { cacheRevalidateSeconds, cacheTags, createCachedQuery } from "@/lib/cache";
 import { getProductPopularity } from "@/lib/admin-insights/getProductPopularity";
 import { getSearchTrends } from "@/lib/admin-insights/getSearchTrends";
 import type { AdminInsightsSnapshot } from "@/types";
 
-export async function getInsightsSnapshot(): Promise<AdminInsightsSnapshot> {
+async function getInsightsSnapshotUncached(): Promise<AdminInsightsSnapshot> {
   const [productPopularity, searchTrends] = await Promise.all([
     getProductPopularity(),
     getSearchTrends(),
@@ -16,3 +17,17 @@ export async function getInsightsSnapshot(): Promise<AdminInsightsSnapshot> {
     topSearchQuery: searchTrends.topQueries[0] ?? null,
   };
 }
+
+export const getInsightsSnapshot = createCachedQuery(
+  getInsightsSnapshotUncached,
+  ["admin-insights:snapshot:v2"],
+  {
+    revalidate: cacheRevalidateSeconds.adminInsights,
+    tags: [
+      cacheTags.account,
+      cacheTags.adminInsights,
+      cacheTags.catalog,
+      cacheTags.search,
+    ],
+  },
+);

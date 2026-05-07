@@ -17,6 +17,18 @@ const tabs = [
     href: "/admin/insights",
   },
   {
+    label: "Ranking",
+    href: "/admin/ranking",
+  },
+  {
+    label: "Flags",
+    href: "/admin/flags",
+  },
+  {
+    label: "Operations",
+    href: "/admin/operations",
+  },
+  {
     label: "Inquiries",
     href: "/admin/inquiries",
   },

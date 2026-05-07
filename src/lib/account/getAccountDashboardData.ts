@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cacheRevalidateSeconds, cacheTags, createCachedQuery } from "@/lib/cache";
 import { getRecommendationCatalogMap } from "@/lib/recommendations/catalog";
 import { getRecommendedForUser } from "@/lib/recommendations/getRecommendedForUser";
 import { getRecommendedItems } from "@/lib/recommendations/getRecommendedItems";
@@ -20,8 +21,13 @@ import {
   getProductHrefForItem,
 } from "@/lib/account/utils";
 
-export async function getAccountDashboardData(
+interface GetAccountDashboardDataOptions {
+  includeRecommendationModules?: boolean;
+}
+
+async function getAccountDashboardDataUncached(
   userId: string,
+  options: GetAccountDashboardDataOptions = {},
 ): Promise<AccountDashboardData> {
   const [
     favoriteItems,
@@ -42,6 +48,8 @@ export async function getAccountDashboardData(
     getUserContinuityPreferencesById(userId),
     getRecommendationCatalogMap(),
   ]);
+  const includeRecommendationModules =
+    options.includeRecommendationModules ?? true;
 
   const recentBuilds = savedBuilds.slice(0, 3);
   const excludeItemKeys = [
@@ -55,30 +63,33 @@ export async function getAccountDashboardData(
       buildRecommendationKey("VEHICLE", build.vehicleSlug),
     ),
   ];
-  const recommendedForYou = await getRecommendedForUser(userId, {
-    limit: 3,
-    excludeItemKeys,
-  });
-  const basedOnFavorites = favoriteItems.length
-    ? await getRecommendedItems({
-        userId,
-        seeds: favoriteItems.slice(0, 3).map((item) => ({
-          itemType: item.itemType,
-          slug: item.itemSlug,
-          weight: 4.5,
-        })),
-        preferredItemTypes: [
-          ...new Set(favoriteItems.map((item) => item.itemType)),
-        ],
-        excludeItemKeys: [
-          ...excludeItemKeys,
-          ...recommendedForYou.map((item) =>
-            buildRecommendationKey(item.itemType, item.slug),
-          ),
-        ],
+  const recommendedForYou = includeRecommendationModules
+    ? await getRecommendedForUser(userId, {
         limit: 3,
+        excludeItemKeys,
       })
     : [];
+  const basedOnFavorites =
+    includeRecommendationModules && favoriteItems.length
+      ? await getRecommendedItems({
+          userId,
+          seeds: favoriteItems.slice(0, 3).map((item) => ({
+            itemType: item.itemType,
+            slug: item.itemSlug,
+            weight: 4.5,
+          })),
+          preferredItemTypes: [
+            ...new Set(favoriteItems.map((item) => item.itemType)),
+          ],
+          excludeItemKeys: [
+            ...excludeItemKeys,
+            ...recommendedForYou.map((item) =>
+              buildRecommendationKey(item.itemType, item.slug),
+            ),
+          ],
+          limit: 3,
+        })
+      : [];
 
   return {
     favoriteItems,
@@ -120,3 +131,12 @@ export async function getAccountDashboardData(
     },
   };
 }
+
+export const getAccountDashboardData = createCachedQuery(
+  getAccountDashboardDataUncached,
+  ["account:dashboard:v2"],
+  {
+    revalidate: cacheRevalidateSeconds.accountSummary,
+    tags: [cacheTags.account, cacheTags.recommendations],
+  },
+);

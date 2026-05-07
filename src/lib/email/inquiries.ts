@@ -9,7 +9,7 @@ import {
   getShopProductBySlug,
   getVehicleBySlug,
 } from "@/lib/db";
-import { sendEmail } from "@/lib/email/send-email";
+import { sendEmail, type SendEmailOptions } from "@/lib/email/send-email";
 import {
   buildAdminDemoRequestEmail,
   buildAdminInquiryNotificationEmail,
@@ -32,6 +32,11 @@ interface InquiryEmailInput {
   email: string;
   phone?: string;
   message: string;
+}
+
+export interface InquiryNotificationEmailMessage {
+  key: "admin" | "user";
+  message: SendEmailOptions;
 }
 
 export interface InquiryEmailDeliveryResult {
@@ -107,6 +112,46 @@ function buildEmailTemplates(context: InquiryEmailContext) {
   };
 }
 
+export async function buildInquiryNotificationEmailMessages(
+  input: InquiryEmailInput,
+): Promise<InquiryNotificationEmailMessage[]> {
+  const adminNotificationEmail = getAdminNotificationEmail();
+
+  if (!adminNotificationEmail) {
+    return [];
+  }
+
+  const productContext = await resolveProductContext({
+    itemType: input.itemType,
+    productSlug: input.productSlug,
+  });
+  const context = buildInquiryEmailContext(input, productContext);
+  const templates = buildEmailTemplates(context);
+
+  return [
+    {
+      key: "admin",
+      message: {
+        to: adminNotificationEmail,
+        subject: templates.admin.subject,
+        html: templates.admin.html,
+        text: templates.admin.text,
+        replyTo: input.email,
+      },
+    },
+    {
+      key: "user",
+      message: {
+        to: input.email,
+        subject: templates.user.subject,
+        html: templates.user.html,
+        text: templates.user.text,
+        replyTo: adminNotificationEmail,
+      },
+    },
+  ];
+}
+
 export async function sendInquiryNotificationEmails(
   input: InquiryEmailInput,
 ): Promise<InquiryEmailDeliveryResult> {
@@ -121,28 +166,22 @@ export async function sendInquiryNotificationEmails(
     };
   }
 
-  const productContext = await resolveProductContext({
-    itemType: input.itemType,
-    productSlug: input.productSlug,
-  });
-  const context = buildInquiryEmailContext(input, productContext);
-  const templates = buildEmailTemplates(context);
+  const messages = await buildInquiryNotificationEmailMessages(input);
+  const adminMessage = messages.find((entry) => entry.key === "admin");
+  const userMessage = messages.find((entry) => entry.key === "user");
+
+  if (!adminMessage || !userMessage) {
+    return {
+      status: "skipped",
+      failureMessages: [
+        "Transactional email is not fully configured on this environment.",
+      ],
+    };
+  }
 
   const [adminResult, userResult] = await Promise.all([
-    sendEmail({
-      to: adminNotificationEmail,
-      subject: templates.admin.subject,
-      html: templates.admin.html,
-      text: templates.admin.text,
-      replyTo: input.email,
-    }),
-    sendEmail({
-      to: input.email,
-      subject: templates.user.subject,
-      html: templates.user.html,
-      text: templates.user.text,
-      replyTo: adminNotificationEmail,
-    }),
+    sendEmail(adminMessage.message),
+    sendEmail(userMessage.message),
   ]);
 
   const failureMessages: string[] = [];

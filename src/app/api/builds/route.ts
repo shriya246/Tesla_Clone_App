@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
@@ -6,8 +5,8 @@ import {
   getVehicleConfiguratorDefinition,
   resolveVehicleConfiguratorState,
 } from "@/lib/configurator/vehicle-configurator";
-import { createSavedBuild } from "@/lib/db/saved-builds";
 import { getVehicleBySlug } from "@/lib/db/vehicles";
+import { saveBuild } from "@/lib/services/saved-builds";
 import { saveBuildPayloadSchema } from "@/lib/validations/saved-build";
 import type { SavedBuildMutationResponse } from "@/types";
 
@@ -69,7 +68,7 @@ export async function POST(request: Request) {
       definition,
       parsed.data.selectionIds,
     );
-    const savedBuild = await createSavedBuild({
+    const savedBuild = await saveBuild({
       userId,
       vehicleSlug: vehicle.slug,
       vehicleTitle: vehicle.title,
@@ -78,14 +77,6 @@ export async function POST(request: Request) {
       buildLabel: parsed.data.buildLabel,
       selectedOptions: resolvedState.selectedOptions,
     });
-
-    if (!savedBuild) {
-      throw new Error("Saved build mapping failed.");
-    }
-
-    revalidatePath("/account");
-    revalidatePath("/account/builds");
-    revalidatePath(savedBuild.buildHref);
 
     const response: SavedBuildMutationResponse = {
       success: true,

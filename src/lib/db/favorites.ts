@@ -23,6 +23,14 @@ export function getUserFavorites(userId: string) {
     .catch(() => []);
 }
 
+export function countFavoritesByUser(userId: string) {
+  return prisma.favorite.count({
+    where: {
+      userId,
+    },
+  });
+}
+
 export function addFavorite(input: {
   userId: string;
   itemType: FavoriteItemType;

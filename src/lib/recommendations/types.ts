@@ -11,6 +11,7 @@ export interface RecommendationCatalogItem extends RecommendationDisplayItem {
   key: string;
   priceValue: number | null;
   tokens: string[];
+  updatedAt?: Date;
 }
 
 export interface RecommendationSeedInput {
@@ -38,6 +39,11 @@ export interface RecentlyViewedSignal {
   lastViewedAt: Date;
 }
 
+export interface RecommendationSignalMap {
+  categoryWeights: Map<RecommendationItemType, number>;
+  tokenWeights: Map<string, number>;
+}
+
 export interface RecommendationUserProfile {
   hasSignals: boolean;
   interactedKeys: Set<string>;
@@ -46,6 +52,10 @@ export interface RecommendationUserProfile {
   savedBuildKeys: Set<string>;
   categoryWeights: Map<RecommendationItemType, number>;
   tokenWeights: Map<string, number>;
+  favoriteSignals: RecommendationSignalMap;
+  recentSignals: RecommendationSignalMap;
+  savedBuildSignals: RecommendationSignalMap;
+  inquirySignals: RecommendationSignalMap;
   favoriteSeeds: RecommendationSeedInput[];
   recentSeeds: RecommendationSeedInput[];
   savedBuildSeeds: RecommendationSeedInput[];
@@ -60,4 +70,38 @@ export interface GetRecommendedItemsInput {
   limit?: number;
   excludeItemKeys?: string[];
   includeInteractedItems?: boolean;
+}
+
+export interface RecommendationScoreComponent {
+  id: string;
+  label: string;
+  score: number;
+  description: string;
+}
+
+export interface RecommendationScoreBreakdown {
+  totalScore: number;
+  components: RecommendationScoreComponent[];
+  reasons: string[];
+  pinned: boolean;
+  boostScore: number;
+  categoryBoostFactor: number;
+  normalizedPopularity: number;
+  normalizedFreshness: number;
+}
+
+export interface RankedRecommendationCandidate {
+  candidate: RecommendationCatalogItem;
+  score: number;
+  breakdown: RecommendationScoreBreakdown;
+}
+
+export interface RecommendationDebugItem extends RecommendationDisplayItem {
+  itemType: RecommendationItemType;
+  slug: string;
+  score: number;
+  reasons: string[];
+  scoreBreakdown: RecommendationScoreComponent[];
+  pinned: boolean;
+  boostScore: number;
 }

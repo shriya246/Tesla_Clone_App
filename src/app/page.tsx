@@ -21,6 +21,10 @@ import {
   productSections,
 } from "@/data/homeSections";
 import { getRecentSavedBuildsByUser } from "@/lib/db/saved-builds";
+import {
+  getFeatureFlagActorFromSession,
+  getFeatureFlags,
+} from "@/lib/flags";
 import { buildPageMetadata, SITE_TITLE } from "@/lib/metadata";
 import {
   getPersonalizedHomepageData,
@@ -46,9 +50,15 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const session = await auth().catch(() => null);
   const userId = session?.user?.id;
+  const flags = getFeatureFlags({
+    actor: getFeatureFlagActorFromSession(session),
+    path: "/",
+  });
   const [personalizedSections, recentlyViewedItems, recentBuilds] = userId
     ? await Promise.all([
-        getPersonalizedHomepageData(userId),
+        flags.homepagePersonalization.value === "enhanced"
+          ? getPersonalizedHomepageData(userId)
+          : Promise.resolve([]),
         getRecentlyViewed(userId, 4),
         getRecentSavedBuildsByUser(userId, 3),
       ])

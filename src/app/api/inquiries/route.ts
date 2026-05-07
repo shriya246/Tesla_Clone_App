@@ -2,8 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
-import { createInquiry } from "@/lib/db/inquiries";
-import { sendInquiryNotificationEmails } from "@/lib/email/inquiries";
+import { queueInquiryNotificationEmails } from "@/lib/email/inquiry-jobs";
 import {
   buildRateLimitHeaders,
   consumeRateLimit,
@@ -12,6 +11,7 @@ import {
   getRequestIp,
   isTrustedMutationOrigin,
 } from "@/lib/security/request";
+import { submitInquiry } from "@/lib/services/inquiries";
 import { inquiryPayloadSchema } from "@/lib/validations/inquiry";
 import type { InquiryApiResponse, InquiryTypeValue } from "@/types";
 
@@ -114,14 +114,18 @@ export async function POST(request: Request) {
       });
     }
 
-    const inquiry = await createInquiry({
-      ...parsed.data,
-      userId: session?.user?.id,
+    const inquiry = await submitInquiry({
+      actor: {
+        userId: session?.user?.id,
+        email: session?.user?.email,
+        role: session?.user?.role,
+      },
+      payload: parsed.data,
     });
     let emailStatus: InquiryApiResponse["emailStatus"] = "sent";
 
     try {
-      const emailResult = await sendInquiryNotificationEmails({
+      const emailResult = await queueInquiryNotificationEmails({
         inquiryId: inquiry.id,
         createdAt: inquiry.createdAt,
         ...parsed.data,

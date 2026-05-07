@@ -3,15 +3,17 @@ import { InsightBarList } from "@/components/admin/InsightBarList";
 import { InsightSectionCard } from "@/components/admin/InsightSectionCard";
 import {
   getAllInquiries,
+  getInquiryWorkflowSummary,
 } from "@/lib/db/admin";
 import { getInquiryTrends } from "@/lib/admin-insights";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminInquiriesPage() {
-  const [inquiries, inquiryTrends] = await Promise.all([
+  const [inquiries, inquiryTrends, workflowSummary] = await Promise.all([
     getAllInquiries(),
     getInquiryTrends(),
+    getInquiryWorkflowSummary(),
   ]);
   const topInquiryType = inquiryTrends.byType[0];
 
@@ -39,7 +41,7 @@ export default async function AdminInquiriesPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <article className="rounded-[1.5rem] border border-white/8 bg-black/24 p-5">
               <p className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
                 Total
@@ -75,6 +77,18 @@ export default async function AdminInquiriesPage() {
                 {topInquiryType
                   ? `${topInquiryType.count} inquiries currently lead the mix.`
                   : "The inquiry mix will show up here once requests are submitted."}
+              </p>
+            </article>
+
+            <article className="rounded-[1.5rem] border border-white/8 bg-black/24 p-5">
+              <p className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-white/42">
+                Prioritized
+              </p>
+              <p className="mt-4 text-4xl font-semibold tracking-tight text-white">
+                {workflowSummary.prioritizedCount}
+              </p>
+              <p className="mt-4 text-sm leading-6 text-white/62">
+                Requests auto-marked for faster follow-up by the workflow rules.
               </p>
             </article>
           </div>

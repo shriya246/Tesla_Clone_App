@@ -13,6 +13,10 @@ import {
   getRecentSavedBuildsByUser,
   getSavedBuildsByUser,
 } from "@/lib/db/saved-builds";
+import {
+  getFeatureFlagActorFromSession,
+  getFeatureFlags,
+} from "@/lib/flags";
 import { buildPageMetadata } from "@/lib/metadata";
 import { buildMediaBackgroundStyle } from "@/lib/media";
 import { getRecommendedItems } from "@/lib/recommendations";
@@ -34,11 +38,16 @@ export default async function AccountBuildsPage() {
     redirect("/signin?callbackUrl=%2Faccount%2Fbuilds");
   }
 
+  const flags = getFeatureFlags({
+    actor: getFeatureFlagActorFromSession(session),
+    path: "/account/builds",
+  });
   const [savedBuilds, recentBuilds] = await Promise.all([
     getSavedBuildsByUser(session.user.id),
     getRecentSavedBuildsByUser(session.user.id, 3),
   ]);
-  const inspiredBySavedBuilds = savedBuilds.length
+  const inspiredBySavedBuilds =
+    flags.savedBuildRecommendations.enabled && savedBuilds.length
     ? await getRecommendedItems({
         userId: session.user.id,
         seeds: savedBuilds.slice(0, 3).map((build) => ({
